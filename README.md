@@ -1,7 +1,7 @@
 # Code Generation with AlphaKhulnasoft: From Prompt Engineering to Flow Engineering
 
 [Paper](https://arxiv.org/abs/2401.08500) |
-[Dataset](https://huggingface.co/datasets/talrid/CodeContests_valid_and_test_AlphaKhulnasoft/blob/main/codecontests_valid_and_test_processed_alpha_khulnasoft.zip)
+[Dataset](https://huggingface.co/datasets/khulnasoft/CodeContests_valid_and_test_AlphaKhulnasoft/blob/main/codecontests_valid_and_test_processed_alpha_khulnasoft.zip)
 
 Official Implementation
 > Tal Ridnik, Dedy Kredo, Itamar Friedman <br/> KhulnaSoft
@@ -63,7 +63,7 @@ and run: `pip install -r requirements.txt`.
 key = "..."
 ```
 
-(3) Download the processed CodeContest validation and test dataset from [hugging face](https://huggingface.co/datasets/talrid/CodeContests_valid_and_test_AlphaKhulnasoft/blob/main/codecontests_valid_and_test_processed_alpha_khulnasoft.zip), extract the zip file, and placed the extracted folder in the root of the project.
+(3) Download the processed CodeContest validation and test dataset from [hugging face](https://huggingface.co/datasets/khulnasoft/CodeContests_valid_and_test_AlphaKhulnasoft/blob/main/codecontests_valid_and_test_processed_alpha_khulnasoft.zip), extract the zip file, and placed the extracted folder in the root of the project.
 
 ## How to run
 
