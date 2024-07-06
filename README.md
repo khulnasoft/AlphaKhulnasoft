@@ -4,7 +4,7 @@
 [Dataset](https://huggingface.co/datasets/khulnasoft/CodeContests_valid_and_test_AlphaKhulnasoft/blob/main/codecontests_valid_and_test_processed_alpha_khulnasoft.zip)
 
 Official Implementation
-> Tal Ridnik, Dedy Kredo, Itamar Friedman <br/> KhulnaSoft
+> Md Sulaiman, Abdullah Al-Mamun, KhulnaSoft Lab <br/> KhulnaSoft
 
 ## News 2024-17-05
 
@@ -263,7 +263,7 @@ We removed the train set (which is not relevant to our work) and did some post-p
 ```
 @misc{ridnik2024code,
       title={Code Generation with AlphaKhulnasoft: From Prompt Engineering to Flow Engineering}, 
-      author={Tal Ridnik and Dedy Kredo and Itamar Friedman},
+      author={Md Sulaiman and Abdullah Al-Mamun and KhulnaSoft Lab},
       year={2024},
       eprint={2401.08500},
       archivePrefix={arXiv},

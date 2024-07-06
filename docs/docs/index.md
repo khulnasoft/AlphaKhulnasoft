@@ -7,7 +7,7 @@ Code Generation with AlphaKhulnasoft: From Prompt Engineering to Flow Engineerin
 
 **Official Implementation:**
 
-Tal Ridnik, Dedy Kredo, Itamar Friedman
+Md Sulaiman, Abdullah Al-Mamun, KhulnaSoft Lab
 
 ## Abstract
 
@@ -222,7 +222,7 @@ We removed the train set (which is not relevant to our work) and did some post-p
 ```
 @misc{ridnik2024code,
       title={Code Generation with AlphaKhulnasoft: From Prompt Engineering to Flow Engineering}, 
-      author={Tal Ridnik and Dedy Kredo and Itamar Friedman},
+      author={Md Sulaiman and Abdullah Al-Mamun and KhulnaSoft Lab},
       year={2024},
       eprint={2401.08500},
       archivePrefix={arXiv},
