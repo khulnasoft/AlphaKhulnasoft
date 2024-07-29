@@ -608,9 +608,10 @@ class GenerateKeyResponse(GenerateKeyRequest):
             value = values.get(field)
             if value is not None and isinstance(value, str):
                 try:
-                    values[field] = json.loads(value)
-                except json.JSONDecodeError:
-                    raise ValueError(f"Field {field} should be a valid dictionary")
+                    try:
+                        values[field] = json.loads(value)
+                    except json.JSONDecodeError as e:
+                        raise ValueError(f"Error parsing JSON for field {field}: {str(e)}")
 
         return values
 
