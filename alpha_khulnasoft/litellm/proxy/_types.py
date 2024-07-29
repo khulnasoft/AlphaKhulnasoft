@@ -28,7 +28,7 @@ else:
     Span = Any
 
 
-class LitellmUserRoles(str, enum.Enum):
+class LitellmUserRoles(enum.Enum):
     """
     Admin Roles:
     PROXY_ADMIN: admin over the platform
