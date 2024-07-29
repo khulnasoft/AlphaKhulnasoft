@@ -395,17 +395,16 @@ class LiteLLM_JWTAuth(LiteLLMBase):
     public_key_ttl: float = 600
 
     def __init__(self, **kwargs: Any) -> None:
-        # get the attribute names for this Pydantic model
+        self.validate_keys(kwargs)
+        super().__init__(**kwargs)
+
+    def validate_keys(self, kwargs):
         allowed_keys = self.__annotations__.keys()
-
         invalid_keys = set(kwargs.keys()) - allowed_keys
-
         if invalid_keys:
             raise ValueError(
                 f"Invalid arguments provided: {', '.join(invalid_keys)}. Allowed arguments are: {', '.join(allowed_keys)}."
             )
-
-        super().__init__(**kwargs)
 
 
 class LiteLLMPromptInjectionParams(LiteLLMBase):
