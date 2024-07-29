@@ -139,7 +139,7 @@ class LiteLLMBase(BaseModel):
     def json(self, **kwargs):
         try:
             return self.model_dump(**kwargs)  # noqa
-        except Exception as e:
+        except AttributeError as e:
             # if using pydantic v1
             return self.dict(**kwargs)
 
