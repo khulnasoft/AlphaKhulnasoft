@@ -1,0 +1,90 @@
+{
+  "configurations": [
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "name": "Launch evaluate_dataset.py",
+      "program": "${workspaceFolder}/alpha_khulnasoft/evaluate_dataset.py",
+      "args": [
+        "--dataset_name",
+        "${input:datasetName}",
+        "--split_name",
+        "${input:splitName}",
+        "--database_solution_path",
+        "${input:databaseSolutionPath}"
+      ]
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "name": "Launch solve_dataset.py",
+      "program": "${workspaceFolder}/alpha_khulnasoft/solve_dataset.py",
+      "args": [
+        "--dataset_name",
+        "${input:datasetName}",
+        "--split_name",
+        "${input:splitName}",
+        "--database_solution_path",
+        "${input:databaseSolutionPath}"
+      ]
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "name": "Launch solve_my_problem.py",
+      "program": "${workspaceFolder}/alpha_khulnasoft/solve_my_problem.py",
+      "args": [
+        "--my_problem_json_file",
+        "${input:myProblemJsonFile}"
+      ]
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "name": "Launch solve_problem.py",
+      "program": "${workspaceFolder}/alpha_khulnasoft/solve_problem.py",
+      "args": [
+        "--dataset_name",
+        "${input:datasetName}",
+        "--split_name",
+        "${input:splitName}",
+        "--problem_number",
+        "${input:problemNumber}",
+        "--problem_name",
+        "${input:problemName}"
+      ]
+    }
+  ],
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "datasetName",
+      "description": "Enter the dataset name"
+    },
+    {
+      "type": "promptString",
+      "id": "splitName",
+      "description": "Enter the split name"
+    },
+    {
+      "type": "promptString",
+      "id": "databaseSolutionPath",
+      "description": "Enter the database solution path"
+    },
+    {
+      "type": "promptString",
+      "id": "myProblemJsonFile",
+      "description": "Enter the path to your problem JSON file"
+    },
+    {
+      "type": "promptString",
+      "id": "problemNumber",
+      "description": "Enter the problem number"
+    },
+    {
+      "type": "promptString",
+      "id": "problemName",
+      "description": "Enter the problem name"
+    }
+  ]
+}
