@@ -1,4 +1,4 @@
-from jinja2 import Environment, StrictUndefined
+from jinja2 import Environment, StrictUndefined, select_autoescape
 from tiktoken import encoding_for_model, get_encoding
 
 from alpha_khulnasoft.settings.config_loader import get_settings
@@ -55,7 +55,7 @@ class TokenHandler:
         Returns:
         The sum of the number of tokens in the system and user strings.
         """
-        environment = Environment(undefined=StrictUndefined)
+        environment = Environment(undefined=StrictUndefined, autoescape=select_autoescape(['html', 'xml']))
         system_prompt = environment.from_string(system).render(vars)
         user_prompt = environment.from_string(user).render(vars)
         system_prompt_tokens = len(encoder.encode(system_prompt))
