@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import os
-from jinja2 import Environment, StrictUndefined
+from jinja2 import Environment, StrictUndefined, select_autoescape
 
 from alpha_khulnasoft.code_contests.data.provider import CodeContestDataProvider
 from alpha_khulnasoft.gen.stages.run_baseline import run_baseline
@@ -28,7 +28,7 @@ class CodeContestsCompetitor:
         self.ai_handler = AiHandler()
 
     def render(self, problem_json, prompt: str):
-        environment = Environment(undefined=StrictUndefined)
+        environment = Environment(undefined=StrictUndefined, autoescape=select_autoescape())
         environment.globals["zip"] = zip
         environment.globals["enumerate"] = enumerate
         sys_prompt = environment.from_string(self.prompt[prompt].system).render(problem_json)
