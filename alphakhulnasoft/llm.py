@@ -28,10 +28,10 @@ class LLMProvider:
 
         try:
             response = litellm.completion(model=self.model, messages=messages)
-            return response.choices[0].message.content
+            return str(response.choices[0].message.content)
         except Exception as e:
             print(f"Error calling LLM: {e}")
-            return f"Error: {e}"
+            return str(f"Error: {e}")
 
     def extract_code(self, text: str) -> str:
         """Heuristic to extract code from markdown backticks."""

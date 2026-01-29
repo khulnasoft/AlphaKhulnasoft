@@ -7,7 +7,7 @@ from .evaluator import Evaluator
 from .prompts import PromptRegistry
 
 
-def run_benchmark(dataset_path: str = None, limit: int = 5):
+def run_benchmark(dataset_path: str | None = None, limit: int = 5):
     """
     Orchestrates the AlphaKhulnasoft v2 Benchmark.
     """

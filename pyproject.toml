@@ -23,6 +23,7 @@ dev = [
     "pytest",
     "mypy",
     "pytest-mock",
+    "pandas-stubs",
 ]
 
 [tool.ruff]
@@ -38,6 +39,15 @@ python_version = "3.10"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false # Start loose, tighten later
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = [
+    "datasets.*",
+    "seaborn.*",
+    "matplotlib.*"
+]
+ignore_missing_imports = true
 
 [build-system]
 requires = ["hatchling"]

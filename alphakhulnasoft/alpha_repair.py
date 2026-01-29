@@ -105,7 +105,7 @@ class AlphaRepairAgent:
         """The 'Reasoning' Step."""
         print("🕵️ [Debugger] Analyzing Root Cause...")
         prompt = self.prompts.analyze_failure(state.current_code, error_log, state.problem_desc)
-        return self.llm.complete(prompt, system_prompt="You are a world-class debugging agent.")
+        return str(self.llm.complete(prompt, system_prompt="You are a world-class debugging agent."))
 
     def step_apply_fix(self, state: FlowState, root_cause: str, error_log: str) -> FlowState:
         """Writes the patch based on the analysis."""
@@ -119,7 +119,7 @@ class AlphaRepairAgent:
 
     def _clean_markdown(self, text: str) -> str:
         """Helper to strip markdown ticks."""
-        return self.llm.extract_code(text)
+        return str(self.llm.extract_code(text))
 
     def _finalize_result(self, state: FlowState) -> dict:
         """Formatting for the Leaderboard."""

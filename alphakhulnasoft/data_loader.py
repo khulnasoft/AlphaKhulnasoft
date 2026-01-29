@@ -30,7 +30,7 @@ class DataLoader:
         print(f"📥 Fetching dataset '{dataset_name}' [{split}] from Hugging Face...")
         try:
             ds = load_dataset(dataset_name, split=split)
-            problems = []
+            problems: list[dict] = []
             for item in ds:
                 # Standardizing format: Humaneval/MBPP usually has 'prompt' or 'text'
                 problems.append(
