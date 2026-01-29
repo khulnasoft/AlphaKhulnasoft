@@ -105,7 +105,9 @@ class AlphaRepairAgent:
         """The 'Reasoning' Step."""
         print("🕵️ [Debugger] Analyzing Root Cause...")
         prompt = self.prompts.analyze_failure(state.current_code, error_log, state.problem_desc)
-        return str(self.llm.complete(prompt, system_prompt="You are a world-class debugging agent."))
+        return str(
+            self.llm.complete(prompt, system_prompt="You are a world-class debugging agent.")
+        )
 
     def step_apply_fix(self, state: FlowState, root_cause: str, error_log: str) -> FlowState:
         """Writes the patch based on the analysis."""
