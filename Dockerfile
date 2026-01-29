@@ -7,15 +7,16 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 # Set working directory
 WORKDIR /app
 
-# Copy project files
+# Copy project configuration and source code
 COPY pyproject.toml uv.lock ./
 COPY README.md ./
+COPY alphakhulnasoft/ ./alphakhulnasoft/
 
 # Install dependencies (using uv for speed and precision)
-RUN uv sync --frozen --no-cache
+# Remove --frozen flag to allow resolution, and --no-cache to reduce image size
+RUN uv sync --no-dev
 
-# Copy the rest of the application
-COPY alphakhulnasoft/ ./alphakhulnasoft/
+# Copy additional files
 COPY notebooks/ ./notebooks/
 COPY tests/ ./tests/
 
