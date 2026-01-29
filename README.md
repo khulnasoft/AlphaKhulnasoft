@@ -115,7 +115,7 @@ CI is automatically handled by **GitHub Actions** on every push to `main`.
 
 ## 🤗 Hugging Face Integration
 AlphaKhulnasoft now integrates directly with the Hugging Face ecosystem:
-- **Load Datasets**: Fetch popular coding benchmarks (Humaneval, MBPP) directly from HF Hub.
+- **Load Datasets**: Fetch popular coding benchmarks (HumanEval, MBPP) directly from HF Hub using `openai_humaneval` or `mbpp`.
 - **Publish Results**: Automatically push your benchmark reports to a HF Dataset repository.
 - **Serve Models**: Use `huggingface/` model prefixes via `litellm` to run local or inference-api models.
 

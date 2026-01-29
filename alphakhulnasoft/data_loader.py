@@ -41,9 +41,14 @@ class DataLoader:
                         "tests": self._parse_hf_tests(item),
                     }
                 )
+            print(f"✅ Successfully loaded {len(problems)} problems from Hugging Face.")
             return problems
         except Exception as e:
-            print(f"Error loading from HF: {e}")
+            print(f"❌ Error loading from HF: {e}")
+            print(
+                f"💡 Tip: For HumanEval, try 'openai_humaneval' instead of 'openai/humaneval'"
+            )
+            print("   Or use the dataset generator: python -m alphakhulnasoft.dataset_gen")
             return []
 
     def _parse_hf_tests(self, item: dict) -> list[dict]:
