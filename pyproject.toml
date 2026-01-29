@@ -1,0 +1,44 @@
+[project]
+name = "alphakhulnasoft"
+version = "0.2.0"
+description = "Competitive AI Code Repair System"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "openai",
+    "anthropic",
+    "litellm",
+    "python-dotenv",
+    "matplotlib",
+    "pandas",
+    "seaborn",
+    "datasets",
+    "huggingface_hub",
+    "google-cloud-aiplatform",
+]
+
+[dependency-groups]
+dev = [
+    "ruff",
+    "pytest",
+    "mypy",
+    "pytest-mock",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "C4", "SIM"]
+ignore = ["E501"] # Line too long (handled by formatter)
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false # Start loose, tighten later
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

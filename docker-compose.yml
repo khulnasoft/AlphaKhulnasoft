@@ -1,0 +1,9 @@
+services:
+  alphakhulnasoft:
+    build: .
+    env_file: .env
+    volumes:
+      - ./data:/app/data
+      - ./results:/app/results
+    stdin_open: true
+    tty: true

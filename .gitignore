@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# Environments
+.env
+.spyderproject
+.spyproject
+
+# Data and Results
+data/
+results_*.json
+repair_curve.png
+efficiency_matrix.png
+
+# Build
+dist/
+build/
+*.egg-info/
