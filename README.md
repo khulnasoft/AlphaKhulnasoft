@@ -77,6 +77,12 @@ docker compose run alphakhulnasoft
 docker compose run alphakhulnasoft python -m alphakhulnasoft.dataset_gen
 ```
 
+#### 📦 Pre-built Images
+Images are automatically published to the GitHub Container Registry:
+```bash
+docker pull ghcr.io/khulnasoft/alphakhulnasoft:main
+```
+
 ## 🛡️ Code Quality & CI/CD
 We use modern tooling to ensure high code quality:
 - **Linting & Formatting:** `ruff`
