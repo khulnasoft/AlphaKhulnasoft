@@ -1,5 +1,10 @@
 import json
+import os
 
+# Fix matplotlib backend for Colab/headless environments
+os.environ.pop('MPLBACKEND', None)  # Remove incompatible backend
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
