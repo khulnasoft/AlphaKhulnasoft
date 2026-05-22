@@ -99,6 +99,8 @@ class AlphaRepairAgent:
 
                 # C. Targeted Repair
                 state = self.step_apply_fix(state, root_cause, error_log)
+                if state.status == "FAILED":
+                    break
 
             if state.status != "SOLVED":
                 state.status = "FAILED"
