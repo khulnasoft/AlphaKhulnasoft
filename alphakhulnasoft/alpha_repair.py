@@ -37,34 +37,44 @@ class AlphaRepairAgent:
         """Entry point for the Flow Engineering loop."""
         state = FlowState(problem_desc=problem_description, tests=tests or [])
 
-        print(f"🚀 [AlphaFlow] Starting Logic Flow for Problem ID: {state.id}")
+        try:
+            print(f"🚀 [AlphaFlow] Starting Logic Flow for Problem ID: {state.id}")
 
-        # Step 1: Semantic Analysis (System 2 Thinking)
-        state = self.step_semantic_analysis(state)
+            # Step 1: Semantic Analysis (System 2 Thinking)
+            state = self.step_semantic_analysis(state)
+            if not state.constraints:
+                raise RuntimeError("Semantic analysis failed: constraints not generated")
 
-        # Step 2: Initial Generation
-        state = self.step_generate_solution(state)
+            # Step 2: Initial Generation
+            state = self.step_generate_solution(state)
+            if not state.current_code:
+                raise RuntimeError("Solution generation failed: no code produced")
 
-        # Step 3: The Repair Loop
-        while state.iterations < self.max_retries and state.status != "SOLVED":
-            state.iterations += 1
-            print(f"🔄 [AlphaFlow] Iteration {state.iterations}/{self.max_retries}")
+            # Step 3: The Repair Loop
+            while state.iterations < self.max_retries and state.status != "SOLVED":
+                state.iterations += 1
+                print(f"🔄 [AlphaFlow] Iteration {state.iterations}/{self.max_retries}")
 
-            # A. Testing
-            pass_rate, error_log = self.step_execute_tests(state)
+                # A. Testing
+                pass_rate, error_log = self.step_execute_tests(state)
 
-            if pass_rate == 1.0:
-                state.status = "SOLVED"
-                state.confidence_score = 1.0
-                print("✅ [AlphaFlow] Solution Verified!")
-                break
+                if pass_rate == 1.0:
+                    state.status = "SOLVED"
+                    state.confidence_score = 1.0
+                    print("✅ [AlphaFlow] Solution Verified!")
+                    break
 
-            # B. Root Cause Analysis
-            root_cause = self.step_analyze_failure(state, error_log)
-            print(f"🧐 [Analysis] {root_cause[:100]}...")
+                # B. Root Cause Analysis
+                root_cause = self.step_analyze_failure(state, error_log)
+                print(f"🧐 [Analysis] {root_cause[:100]}...")
 
-            # C. Targeted Repair
-            state = self.step_apply_fix(state, root_cause, error_log)
+                # C. Targeted Repair
+                state = self.step_apply_fix(state, root_cause, error_log)
+
+        except Exception as e:
+            state.status = "FAILED"
+            state.execution_logs.append(f"Fatal Error: {str(e)}")
+            print(f"❌ [AlphaFlow] Flow terminated: {e}")
 
         return self._finalize_result(state)
 
@@ -73,10 +83,15 @@ class AlphaRepairAgent:
     def step_semantic_analysis(self, state: FlowState) -> FlowState:
         """Extracts hard constraints and edge cases."""
         print("🧠 [Analysis] Extracting Constraints via Registry...")
-        prompt = self.prompts.semantic_analysis(state.problem_desc)
-        state.constraints = self.llm.complete(
-            prompt, system_prompt="You are an expert algorithm analyst."
-        )
+        try:
+            prompt = self.prompts.semantic_analysis(state.problem_desc)
+            state.constraints = self.llm.complete(
+                prompt, system_prompt="You are an expert algorithm analyst."
+            )
+            state.execution_logs.append("✅ Semantic analysis completed")
+        except Exception as e:
+            state.execution_logs.append(f"❌ Semantic analysis failed: {str(e)}")
+            raise
         return state
 
     def step_generate_solution(self, state: FlowState) -> FlowState:
