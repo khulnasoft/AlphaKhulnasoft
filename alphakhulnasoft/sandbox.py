@@ -21,6 +21,19 @@ class Sandbox:
         if not code.strip():
             return 0.0, "❌ Error: Empty code generated."
 
+        if not test_cases:
+            return 1.0, "No test cases provided"
+
+        for i, test in enumerate(test_cases):
+            if not isinstance(test, dict):
+                return (
+                    0.0,
+                    f"❌ Invalid test format at index {i}: expected dict, got {type(test).__name__}",
+                )
+            if "input" not in test or "expected" not in test:
+                missing = [k for k in ("input", "expected") if k not in test]
+                return 0.0, f"❌ Test {i} missing key(s): {', '.join(missing)}"
+
         passes = 0
         logs = []
 
