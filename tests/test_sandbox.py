@@ -29,3 +29,34 @@ def test_sandbox_timeout():
     pass_rate, log = sb.run_tests(code, test_cases)
     assert pass_rate == 0.0
     assert "Time Limit Exceeded" in log
+
+
+def test_sandbox_empty_code():
+    sb = Sandbox()
+    pass_rate, log = sb.run_tests("", [{"input": "", "expected": ""}])
+    assert pass_rate == 0.0
+    assert "Empty code" in log
+
+
+def test_sandbox_no_test_cases():
+    sb = Sandbox()
+    code = "print('hello')"
+    pass_rate, log = sb.run_tests(code, [])
+    assert pass_rate == 1.0
+    assert "No test cases" in log
+
+
+def test_sandbox_malformed_test_not_dict():
+    sb = Sandbox()
+    code = "print('hello')"
+    pass_rate, log = sb.run_tests(code, ["not a dict"])
+    assert pass_rate == 0.0
+    assert "expected dict" in log
+
+
+def test_sandbox_malformed_test_missing_keys():
+    sb = Sandbox()
+    code = "print('hello')"
+    pass_rate, log = sb.run_tests(code, [{"bad_key": "value"}])
+    assert pass_rate == 0.0
+    assert "missing key" in log
