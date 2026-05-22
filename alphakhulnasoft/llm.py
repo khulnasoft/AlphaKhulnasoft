@@ -14,6 +14,8 @@ class LLMProvider:
     """
 
     def __init__(self, model: str = "gpt-4-turbo", max_retries: int = 3):
+        if max_retries <= 0:
+            raise ValueError(f"max_retries must be positive, got {max_retries}")
         self.model = model
         self.max_retries = max_retries
 
