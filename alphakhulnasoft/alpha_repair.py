@@ -1,4 +1,5 @@
 import uuid
+import warnings
 from dataclasses import dataclass, field
 from typing import Literal
 
@@ -27,8 +28,32 @@ class FlowState:
 
 # --- 2. The Agent Core ---
 class AlphaRepairAgent:
-    def __init__(self, config: AlphaConfig | None = None, prompt_registry=PromptRegistry):
+    def __init__(
+        self,
+        config: AlphaConfig | None = None,
+        prompt_registry=PromptRegistry,
+        model_name: str | None = None,
+        max_retries: int | None = None,
+        llm_max_retries: int | None = None,
+        sandbox_timeout: int | None = None,
+    ):
         self.config = config or AlphaConfig()
+        legacy_kwargs = {
+            "model_name": model_name,
+            "max_retries": max_retries,
+            "llm_max_retries": llm_max_retries,
+            "sandbox_timeout": sandbox_timeout,
+        }
+        used_legacy = {k: v for k, v in legacy_kwargs.items() if v is not None}
+        if used_legacy:
+            warnings.warn(
+                f"Legacy keyword arguments {set(used_legacy)} are deprecated. Use `config=AlphaConfig(...)` instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            for key, value in used_legacy.items():
+                setattr(self.config, key, value)
+
         self.model = self.config.model_name
         self.max_retries = self.config.max_retries
         self.llm = LLMProvider(
