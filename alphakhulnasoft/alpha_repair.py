@@ -75,6 +75,10 @@ class AlphaRepairAgent:
                 # C. Targeted Repair
                 state = self.step_apply_fix(state, root_cause, error_log)
 
+            if state.status != "SOLVED":
+                state.status = "FAILED"
+                state.execution_logs.append("Max retries exceeded without solution")
+
         except Exception as e:
             state.status = "FAILED"
             state.execution_logs.append(f"Fatal Error: {str(e)}")
@@ -120,13 +124,6 @@ class AlphaRepairAgent:
         if not state.tests:
             state.execution_logs.append("Warning: No tests provided")
             return 0.0, "No tests provided to verify solution."
-
-        for i, test in enumerate(state.tests):
-            if not isinstance(test, dict):
-                raise ValueError(f"Test {i}: Expected dict, got {type(test).__name__}")
-            if "input" not in test or "expected" not in test:
-                missing = [k for k in ("input", "expected") if k not in test]
-                raise ValueError(f"Test {i}: Missing key(s): {', '.join(missing)}")
 
         pass_rate, error_log = self.sandbox.run_tests(state.current_code, state.tests)
         state.confidence_score = pass_rate

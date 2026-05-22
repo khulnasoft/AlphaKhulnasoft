@@ -90,3 +90,72 @@ def test_agent_accepts_config():
 def test_agent_default_uses_prompt_registry():
     agent = AlphaRepairAgent()
     assert agent.prompts == PromptRegistry
+
+
+def test_step_execute_tests_logs_warning_on_empty():
+    agent = AlphaRepairAgent()
+    state = FlowState(problem_desc="test")
+    pass_rate, log = agent.step_execute_tests(state)
+    assert pass_rate == 0.0
+    assert "No tests provided" in log
+    assert any("No tests provided" in msg for msg in state.execution_logs)
+
+
+def test_step_execute_tests_forwards_to_sandbox(monkeypatch):
+    agent = AlphaRepairAgent()
+    state = FlowState(problem_desc="test", tests=[{"input": "2", "expected": "4"}])
+
+    called = {"value": False}
+
+    def fake_run_tests(code, test_cases):
+        called["value"] = True
+        assert test_cases == state.tests
+        return 1.0, ""
+
+    monkeypatch.setattr(agent.sandbox, "run_tests", fake_run_tests)
+    pass_rate, log = agent.step_execute_tests(state)
+    assert called["value"]
+    assert pass_rate == 1.0
+
+
+def test_run_flow_handles_step_exception(monkeypatch):
+    agent = AlphaRepairAgent()
+
+    def failing_step(state):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(agent, "step_generate_solution", failing_step)
+    result = agent.run_flow("test problem")
+    assert result["status"] == "FAILED"
+
+
+def test_run_flow_fails_when_max_retries_exhausted(monkeypatch):
+    config = AlphaConfig(max_retries=3)
+    agent = AlphaRepairAgent(config=config)
+
+    def fake_semantic_analysis(state):
+        state.constraints = "dummy constraints"
+        return state
+
+    def fake_generate_solution(state):
+        state.current_code = "print(1)"
+        return state
+
+    def fake_step_execute_tests(state):
+        return 0.0, "test failure"
+
+    def fake_step_analyze_failure(state, error_log):
+        return "dummy root cause"
+
+    def fake_step_apply_fix(state, root_cause, error_log):
+        return state
+
+    monkeypatch.setattr(agent, "step_semantic_analysis", fake_semantic_analysis)
+    monkeypatch.setattr(agent, "step_generate_solution", fake_generate_solution)
+    monkeypatch.setattr(agent, "step_execute_tests", fake_step_execute_tests)
+    monkeypatch.setattr(agent, "step_analyze_failure", fake_step_analyze_failure)
+    monkeypatch.setattr(agent, "step_apply_fix", fake_step_apply_fix)
+
+    result = agent.run_flow("test problem")
+    assert result["status"] == "FAILED"
+    assert result["metrics"]["iterations"] == 3

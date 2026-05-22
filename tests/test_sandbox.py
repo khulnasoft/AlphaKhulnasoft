@@ -42,7 +42,7 @@ def test_sandbox_no_test_cases():
     sb = Sandbox()
     code = "print('hello')"
     pass_rate, log = sb.run_tests(code, [])
-    assert pass_rate == 1.0
+    assert pass_rate == 0.0
     assert "No test cases" in log
 
 

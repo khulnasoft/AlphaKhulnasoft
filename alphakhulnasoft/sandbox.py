@@ -22,7 +22,7 @@ class Sandbox:
             return 0.0, "❌ Error: Empty code generated."
 
         if not test_cases:
-            return 1.0, "No test cases provided"
+            return 0.0, "No test cases provided"
 
         for i, test in enumerate(test_cases):
             if not isinstance(test, dict):

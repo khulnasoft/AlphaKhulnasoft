@@ -33,3 +33,10 @@ def test_parse_hf_tests_no_test_key():
     loader = DataLoader()
     result = loader._parse_hf_tests({"prompt": "def solve(): pass"})
     assert result == []
+
+
+def test_parse_hf_tests_with_test_string():
+    loader = DataLoader()
+    example = {"prompt": "def solve(): pass", "test": "assert solve(2) == 4"}
+    result = loader._parse_hf_tests(example)
+    assert result == [{"input": "", "expected": "assert solve(2) == 4"}]
