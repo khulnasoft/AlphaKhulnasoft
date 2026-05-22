@@ -13,8 +13,9 @@ class LLMProvider:
     Vertex AI Example: model="vertex_ai/gemini-1.5-pro"
     """
 
-    def __init__(self, model: str = "gpt-4-turbo"):
+    def __init__(self, model: str = "gpt-4-turbo", max_retries: int = 3):
         self.model = model
+        self.max_retries = max_retries
 
     def complete(self, prompt: str, system_prompt: str | None = None) -> str:
         """Sends a completion request to the LLM with retry logic."""
@@ -28,18 +29,17 @@ class LLMProvider:
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": prompt})
 
-        max_retries = 3
-        for attempt in range(max_retries):
+        for attempt in range(self.max_retries):
             try:
                 response = litellm.completion(model=self.model, messages=messages)
                 if not response.choices or not response.choices[0].message:
                     raise ValueError("Invalid LLM response structure")
                 return str(response.choices[0].message.content)
             except (litellm.RateLimitError, litellm.APIConnectionError):
-                if attempt < max_retries - 1:
+                if attempt < self.max_retries - 1:
                     wait_time = (2**attempt) + 1
                     print(
-                        f"⚠️ Transient error (attempt {attempt + 1}/{max_retries}), retrying in {wait_time}s..."
+                        f"⚠️ Transient error (attempt {attempt + 1}/{self.max_retries}), retrying in {wait_time}s..."
                     )
                     time.sleep(wait_time)
                     continue

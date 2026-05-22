@@ -2,6 +2,7 @@ import uuid
 from dataclasses import dataclass, field
 from typing import Literal
 
+from .config import AlphaConfig
 from .llm import LLMProvider
 from .prompts import PromptRegistry
 from .sandbox import Sandbox
@@ -26,12 +27,15 @@ class FlowState:
 
 # --- 2. The Agent Core ---
 class AlphaRepairAgent:
-    def __init__(self, model_name="gpt-4o", max_retries=5, prompt_registry=PromptRegistry):
-        self.model = model_name
-        self.max_retries = max_retries
-        self.llm = LLMProvider(model=model_name)
+    def __init__(self, config: AlphaConfig | None = None, prompt_registry=PromptRegistry):
+        self.config = config or AlphaConfig()
+        self.model = self.config.model_name
+        self.max_retries = self.config.max_retries
+        self.llm = LLMProvider(
+            model=self.config.model_name, max_retries=self.config.llm_max_retries
+        )
         self.prompts = prompt_registry
-        self.sandbox = Sandbox(timeout_seconds=2)
+        self.sandbox = Sandbox(timeout_seconds=self.config.sandbox_timeout)
 
     def run_flow(self, problem_description: str, tests: list[dict] | None = None) -> dict:
         """Entry point for the Flow Engineering loop."""
@@ -97,12 +101,17 @@ class AlphaRepairAgent:
     def step_generate_solution(self, state: FlowState) -> FlowState:
         """Generates code based on constraints."""
         print("✍️ [Generator] Drafting initial solution...")
-        prompt = self.prompts.generate_solution(state.problem_desc, state.constraints)
-        raw_code = self.llm.complete(
-            prompt,
-            system_prompt="You are a senior software engineer. Return only code that uses stdin/stdout.",
-        )
-        state.current_code = self._clean_markdown(raw_code)
+        try:
+            prompt = self.prompts.generate_solution(state.problem_desc, state.constraints)
+            raw_code = self.llm.complete(
+                prompt,
+                system_prompt="You are a senior software engineer. Return only code that uses stdin/stdout.",
+            )
+            state.current_code = self._clean_markdown(raw_code)
+            state.execution_logs.append("✅ Solution generated")
+        except Exception as e:
+            state.execution_logs.append(f"❌ Solution generation failed: {str(e)}")
+            raise
         return state
 
     def step_execute_tests(self, state: FlowState) -> tuple[float, str]:
@@ -128,19 +137,42 @@ class AlphaRepairAgent:
     def step_analyze_failure(self, state: FlowState, error_log: str) -> str:
         """The 'Reasoning' Step."""
         print("🕵️ [Debugger] Analyzing Root Cause...")
-        prompt = self.prompts.analyze_failure(state.current_code, error_log, state.problem_desc)
-        return str(
-            self.llm.complete(prompt, system_prompt="You are a world-class debugging agent.")
-        )
+        try:
+            prompt = self.prompts.analyze_failure(state.current_code, error_log, state.problem_desc)
+            root_cause = str(
+                self.llm.complete(prompt, system_prompt="You are a world-class debugging agent.")
+            )
+            state.execution_logs.append(f"✅ Root cause analysis: {root_cause[:80]}...")
+            return root_cause
+        except Exception as e:
+            state.execution_logs.append(f"❌ Root cause analysis failed: {str(e)}")
+            raise
 
     def step_apply_fix(self, state: FlowState, root_cause: str, error_log: str) -> FlowState:
         """Writes the patch based on the analysis."""
         print("🔧 [Repair] Applying fix...")
-        prompt = self.prompts.targeted_repair(state.current_code, root_cause)
-        raw_code = self.llm.complete(prompt, system_prompt="You are a senior software engineer.")
-        state.current_code = self._clean_markdown(raw_code)
+        try:
+            prompt = self.prompts.targeted_repair(state.current_code, root_cause)
+            raw_code = self.llm.complete(
+                prompt, system_prompt="You are a senior software engineer."
+            )
+            cleaned_code = self._clean_markdown(raw_code)
 
-        state.history.append({"iter": state.iterations, "cause": root_cause, "error": error_log})
+            if not cleaned_code.strip():
+                state.execution_logs.append(
+                    f"Warning: Repair iteration {state.iterations} generated empty code"
+                )
+                state.status = "FAILED"
+                return state
+
+            state.current_code = cleaned_code
+            state.history.append(
+                {"iter": state.iterations, "cause": root_cause, "error": error_log}
+            )
+            state.execution_logs.append(f"✅ Repair applied (iteration {state.iterations})")
+        except Exception as e:
+            state.execution_logs.append(f"❌ Repair failed: {str(e)}")
+            raise
         return state
 
     def _clean_markdown(self, text: str) -> str:

@@ -47,7 +47,7 @@ def run_benchmark(dataset_path: str | None = None, limit: int = 5):
         print(f"⚔️  Problem {i + 1}: {title}")
 
         # Initialize the Agent (injecting the Prompts)
-        agent = AlphaRepairAgent(model_name="gpt-4o", prompt_registry=PromptRegistry)
+        agent = AlphaRepairAgent(prompt_registry=PromptRegistry)
 
         start_time = time.time()
 
