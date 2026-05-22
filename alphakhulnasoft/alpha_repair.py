@@ -150,7 +150,6 @@ class AlphaRepairAgent:
         print("⚡ [Runtime] Executing tests in Sandbox...")
         if not state.tests:
             state.execution_logs.append("Warning: No tests provided")
-            return 0.0, "No tests provided to verify solution."
 
         pass_rate, error_log = self.sandbox.run_tests(state.current_code, state.tests)
         state.confidence_score = pass_rate

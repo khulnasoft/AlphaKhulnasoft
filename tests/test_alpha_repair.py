@@ -92,12 +92,17 @@ def test_agent_default_uses_prompt_registry():
     assert agent.prompts == PromptRegistry
 
 
-def test_step_execute_tests_logs_warning_on_empty():
+def test_step_execute_tests_logs_warning_on_empty(monkeypatch):
     agent = AlphaRepairAgent()
     state = FlowState(problem_desc="test")
+
+    def fake_run_tests(code, test_cases):
+        return 0.0, "No test cases provided"
+
+    monkeypatch.setattr(agent.sandbox, "run_tests", fake_run_tests)
     pass_rate, log = agent.step_execute_tests(state)
     assert pass_rate == 0.0
-    assert "No tests provided" in log
+    assert "No test cases" in log
     assert any("No tests provided" in msg for msg in state.execution_logs)
 
 

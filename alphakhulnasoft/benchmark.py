@@ -35,8 +35,10 @@ def run_benchmark(dataset_path: str | None = None, limit: int = 5):
 
     problems = problems[:limit]
 
+    agent = AlphaRepairAgent(prompt_registry=PromptRegistry)
+
     print(f"🔥 Starting AlphaKhulnasoft v2 Benchmark on {len(problems)} problems...")
-    print("   Model: GPT-4o (via litellm)")
+    print(f"   Model: {agent.model} (via litellm)")
     print("   Strategy: Flow Engineering v2\n")
 
     results = []
@@ -45,9 +47,6 @@ def run_benchmark(dataset_path: str | None = None, limit: int = 5):
     for i, problem in enumerate(problems):
         title = problem.get("title", "Unknown")
         print(f"⚔️  Problem {i + 1}: {title}")
-
-        # Initialize the Agent (injecting the Prompts)
-        agent = AlphaRepairAgent(prompt_registry=PromptRegistry)
 
         start_time = time.time()
 
