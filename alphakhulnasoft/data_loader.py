@@ -45,9 +45,7 @@ class DataLoader:
             return problems
         except Exception as e:
             print(f"❌ Error loading from HF: {e}")
-            print(
-                f"💡 Tip: For HumanEval, try 'openai_humaneval' instead of 'openai/humaneval'"
-            )
+            print("💡 Tip: For HumanEval, try 'openai_humaneval' instead of 'openai/humaneval'")
             print("   Or use the dataset generator: python -m alphakhulnasoft.dataset_gen")
             return []
 

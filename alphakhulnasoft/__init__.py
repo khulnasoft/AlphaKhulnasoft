@@ -4,6 +4,7 @@ AlphaKhulnasoft - AI Code Repair & Competitive Programming Engine
 
 from .alpha_repair import AlphaRepairAgent as AlphaRepairAgent
 from .alpha_repair import FlowState as FlowState
+from .config import AlphaConfig as AlphaConfig
 from .data_loader import DataLoader as DataLoader
 from .dataset_gen import generate_hard_problems as generate_hard_problems
 from .evaluator import Evaluator as Evaluator
