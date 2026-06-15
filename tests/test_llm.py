@@ -6,7 +6,7 @@ from alphakhulnasoft.llm import LLMProvider
 
 @pytest.fixture
 def llm_provider():
-    return LLMProvider()
+    return LLMProvider(validate_keys=False)
 
 
 def test_extract_code_python_block(llm_provider):
