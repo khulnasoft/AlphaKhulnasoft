@@ -1,4 +1,5 @@
 import os
+import resource
 import subprocess
 import sys
 import tempfile
@@ -8,10 +9,12 @@ class Sandbox:
     """
     Safely executes generated Python code against test cases.
     Handles timeouts, captures stdout/stderr, and isolates the process.
+    Enhanced with resource limits for security.
     """
 
-    def __init__(self, timeout_seconds: int = 2):
+    def __init__(self, timeout_seconds: int = 2, max_memory_mb: int = 512):
         self.timeout = timeout_seconds
+        self.max_memory_mb = max_memory_mb
 
     def run_tests(self, code: str, test_cases: list[dict]) -> tuple[float, str]:
         """
@@ -76,16 +79,32 @@ class Sandbox:
 
     def _execute_single_run(self, file_path: str, input_str: str) -> dict:
         """
-        Low-level execution with timeout and pipe management.
+        Low-level execution with timeout, resource limits, and pipe management.
         """
+
+        def limit_resources():
+            """Set resource limits for the child process."""
+            try:
+                # Limit memory usage
+                resource.setrlimit(
+                    resource.RLIMIT_AS,
+                    (self.max_memory_mb * 1024 * 1024, self.max_memory_mb * 1024 * 1024),
+                )
+                # Limit CPU time (slightly more than timeout to allow cleanup)
+                resource.setrlimit(resource.RLIMIT_CPU, (self.timeout + 1, self.timeout + 1))
+            except (OSError, ValueError):
+                # Resource limits not supported on this platform
+                pass
+
         try:
-            # Run the python script as a subprocess
+            # Run the python script as a subprocess with resource limits
             process = subprocess.run(
                 [sys.executable, file_path],
                 input=input_str,
                 text=True,
                 capture_output=True,
                 timeout=self.timeout,
+                preexec_fn=limit_resources if sys.platform != "win32" else None,
             )
 
             # Check for non-zero exit codes (Runtime Errors)
@@ -96,5 +115,7 @@ class Sandbox:
 
         except subprocess.TimeoutExpired:
             return {"output": "", "error": f"⏱️ Time Limit Exceeded ({self.timeout}s)"}
+        except MemoryError:
+            return {"output": "", "error": f"💾 Memory Limit Exceeded ({self.max_memory_mb}MB)"}
         except Exception as e:
             return {"output": "", "error": f"System Error: {str(e)}"}
