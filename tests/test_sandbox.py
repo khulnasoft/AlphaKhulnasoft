@@ -2,7 +2,7 @@ from alphakhulnasoft.sandbox import Sandbox
 
 
 def test_sandbox_simple_success():
-    sb = Sandbox(timeout_seconds=2)
+    sb = Sandbox(timeout_seconds=2, max_memory_mb=512)
     code = "name = input(); print(f'Hello {name}')"
     test_cases = [{"input": "World", "expected": "Hello World"}]
 
@@ -12,7 +12,7 @@ def test_sandbox_simple_success():
 
 
 def test_sandbox_failure():
-    sb = Sandbox(timeout_seconds=2)
+    sb = Sandbox(timeout_seconds=2, max_memory_mb=512)
     code = "print('Wrong Output')"
     test_cases = [{"input": "input", "expected": "Expected Output"}]
 
@@ -22,7 +22,7 @@ def test_sandbox_failure():
 
 
 def test_sandbox_timeout():
-    sb = Sandbox(timeout_seconds=1)
+    sb = Sandbox(timeout_seconds=1, max_memory_mb=512)
     code = "import time; time.sleep(2)"
     test_cases = [{"input": "", "expected": ""}]
 
@@ -32,14 +32,14 @@ def test_sandbox_timeout():
 
 
 def test_sandbox_empty_code():
-    sb = Sandbox()
+    sb = Sandbox(max_memory_mb=512)
     pass_rate, log = sb.run_tests("", [{"input": "", "expected": ""}])
     assert pass_rate == 0.0
     assert "Empty code" in log
 
 
 def test_sandbox_no_test_cases():
-    sb = Sandbox()
+    sb = Sandbox(max_memory_mb=512)
     code = "print('hello')"
     pass_rate, log = sb.run_tests(code, [])
     assert pass_rate == 0.0
@@ -47,7 +47,7 @@ def test_sandbox_no_test_cases():
 
 
 def test_sandbox_malformed_test_not_dict():
-    sb = Sandbox()
+    sb = Sandbox(max_memory_mb=512)
     code = "print('hello')"
     pass_rate, log = sb.run_tests(code, ["not a dict"])
     assert pass_rate == 0.0
@@ -55,7 +55,7 @@ def test_sandbox_malformed_test_not_dict():
 
 
 def test_sandbox_malformed_test_missing_keys():
-    sb = Sandbox()
+    sb = Sandbox(max_memory_mb=512)
     code = "print('hello')"
     pass_rate, log = sb.run_tests(code, [{"bad_key": "value"}])
     assert pass_rate == 0.0

@@ -1,8 +1,22 @@
+import os
 import time
 
 from dotenv import load_dotenv
 
 load_dotenv()
+
+
+def validate_api_keys() -> None:
+    """Validate that at least one LLM API key is configured."""
+    has_openai = bool(os.getenv("OPENAI_API_KEY"))
+    has_anthropic = bool(os.getenv("ANTHROPIC_API_KEY"))
+    has_vertex = bool(os.getenv("GOOGLE_APPLICATION_CREDENTIALS"))
+
+    if not any([has_openai, has_anthropic, has_vertex]):
+        raise ValueError(
+            "No LLM API keys found. Please set at least one of: "
+            "OPENAI_API_KEY, ANTHROPIC_API_KEY, or GOOGLE_APPLICATION_CREDENTIALS"
+        )
 
 
 class LLMProvider:
@@ -13,9 +27,13 @@ class LLMProvider:
     Vertex AI Example: model="vertex_ai/gemini-1.5-pro"
     """
 
-    def __init__(self, model: str = "gpt-4-turbo", max_retries: int = 3):
+    def __init__(
+        self, model: str = "gpt-4-turbo", max_retries: int = 3, validate_keys: bool = True
+    ):
         if max_retries <= 0:
             raise ValueError(f"max_retries must be positive, got {max_retries}")
+        if validate_keys:
+            validate_api_keys()
         self.model = model
         self.max_retries = max_retries
 

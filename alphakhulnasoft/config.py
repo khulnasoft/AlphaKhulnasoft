@@ -7,8 +7,8 @@ class AlphaConfig:
     max_retries: int = 5
     sandbox_timeout: int = 2
     llm_max_retries: int = 3
-    max_tokens: int = 4096
-    temperature: float = 0.7
+    max_memory_mb: int = 512
+    validate_api_keys: bool = True
 
     @classmethod
     def from_env(cls):
@@ -19,6 +19,6 @@ class AlphaConfig:
             max_retries=int(os.getenv("ALPHA_MAX_RETRIES", 5)),
             sandbox_timeout=int(os.getenv("ALPHA_SANDBOX_TIMEOUT", 2)),
             llm_max_retries=int(os.getenv("ALPHA_LLM_RETRIES", 3)),
-            max_tokens=int(os.getenv("ALPHA_MAX_TOKENS", 4096)),
-            temperature=float(os.getenv("ALPHA_TEMPERATURE", 0.7)),
+            max_memory_mb=int(os.getenv("ALPHA_MAX_MEMORY_MB", 512)),
+            validate_api_keys=os.getenv("ALPHA_VALIDATE_API_KEYS", "true").lower() == "true",
         )

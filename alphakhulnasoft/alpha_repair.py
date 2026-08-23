@@ -5,8 +5,11 @@ from typing import Literal
 
 from .config import AlphaConfig
 from .llm import LLMProvider
+from .logging_config import get_logger
 from .prompts import PromptRegistry
 from .sandbox import Sandbox
+
+logger = get_logger(__name__)
 
 
 # --- 1. The Shared State (The Brain) ---
@@ -57,17 +60,21 @@ class AlphaRepairAgent:
         self.model = self.config.model_name
         self.max_retries = self.config.max_retries
         self.llm = LLMProvider(
-            model=self.config.model_name, max_retries=self.config.llm_max_retries
+            model=self.config.model_name,
+            max_retries=self.config.llm_max_retries,
+            validate_keys=self.config.validate_api_keys,
         )
         self.prompts = prompt_registry
-        self.sandbox = Sandbox(timeout_seconds=self.config.sandbox_timeout)
+        self.sandbox = Sandbox(
+            timeout_seconds=self.config.sandbox_timeout, max_memory_mb=self.config.max_memory_mb
+        )
 
     def run_flow(self, problem_description: str, tests: list[dict] | None = None) -> dict:
         """Entry point for the Flow Engineering loop."""
         state = FlowState(problem_desc=problem_description, tests=tests or [])
 
         try:
-            print(f"🚀 [AlphaFlow] Starting Logic Flow for Problem ID: {state.id}")
+            logger.info(f"Starting Logic Flow for Problem ID: {state.id}")
 
             # Step 1: Semantic Analysis (System 2 Thinking)
             state = self.step_semantic_analysis(state)
@@ -82,7 +89,7 @@ class AlphaRepairAgent:
             # Step 3: The Repair Loop
             while state.iterations < self.max_retries and state.status != "SOLVED":
                 state.iterations += 1
-                print(f"🔄 [AlphaFlow] Iteration {state.iterations}/{self.max_retries}")
+                logger.info(f"Iteration {state.iterations}/{self.max_retries}")
 
                 # A. Testing
                 pass_rate, error_log = self.step_execute_tests(state)
@@ -90,12 +97,12 @@ class AlphaRepairAgent:
                 if pass_rate == 1.0:
                     state.status = "SOLVED"
                     state.confidence_score = 1.0
-                    print("✅ [AlphaFlow] Solution Verified!")
+                    logger.info("Solution Verified!")
                     break
 
                 # B. Root Cause Analysis
                 root_cause = self.step_analyze_failure(state, error_log)
-                print(f"🧐 [Analysis] {root_cause[:100]}...")
+                logger.debug(f"Root cause analysis: {root_cause[:100]}...")
 
                 # C. Targeted Repair
                 state = self.step_apply_fix(state, root_cause, error_log)
@@ -109,7 +116,7 @@ class AlphaRepairAgent:
         except Exception as e:
             state.status = "FAILED"
             state.execution_logs.append(f"Fatal Error: {str(e)}")
-            print(f"❌ [AlphaFlow] Flow terminated: {e}")
+            logger.error(f"Flow terminated: {e}", exc_info=True)
 
         return self._finalize_result(state)
 
@@ -117,21 +124,23 @@ class AlphaRepairAgent:
 
     def step_semantic_analysis(self, state: FlowState) -> FlowState:
         """Extracts hard constraints and edge cases."""
-        print("🧠 [Analysis] Extracting Constraints via Registry...")
+        logger.info("Extracting Constraints via Registry...")
         try:
             prompt = self.prompts.semantic_analysis(state.problem_desc)
             state.constraints = self.llm.complete(
                 prompt, system_prompt="You are an expert algorithm analyst."
             )
             state.execution_logs.append("✅ Semantic analysis completed")
+            logger.debug("Semantic analysis completed successfully")
         except Exception as e:
             state.execution_logs.append(f"❌ Semantic analysis failed: {str(e)}")
+            logger.error(f"Semantic analysis failed: {e}", exc_info=True)
             raise
         return state
 
     def step_generate_solution(self, state: FlowState) -> FlowState:
         """Generates code based on constraints."""
-        print("✍️ [Generator] Drafting initial solution...")
+        logger.info("Drafting initial solution...")
         try:
             prompt = self.prompts.generate_solution(state.problem_desc, state.constraints)
             raw_code = self.llm.complete(
@@ -140,40 +149,46 @@ class AlphaRepairAgent:
             )
             state.current_code = self._clean_markdown(raw_code)
             state.execution_logs.append("✅ Solution generated")
+            logger.debug("Solution generated successfully")
         except Exception as e:
             state.execution_logs.append(f"❌ Solution generation failed: {str(e)}")
+            logger.error(f"Solution generation failed: {e}", exc_info=True)
             raise
         return state
 
     def step_execute_tests(self, state: FlowState) -> tuple[float, str]:
         """Runs the code in the Sandbox against provided tests."""
-        print("⚡ [Runtime] Executing tests in Sandbox...")
+        logger.info("Executing tests in Sandbox...")
         if not state.tests:
             state.execution_logs.append("Warning: No tests provided")
+            logger.warning("No test cases provided")
 
         pass_rate, error_log = self.sandbox.run_tests(state.current_code, state.tests)
         state.confidence_score = pass_rate
         state.execution_logs.append(f"Pass rate: {pass_rate:.2%}")
+        logger.info(f"Test pass rate: {pass_rate:.2%}")
 
         return pass_rate, error_log
 
     def step_analyze_failure(self, state: FlowState, error_log: str) -> str:
         """The 'Reasoning' Step."""
-        print("🕵️ [Debugger] Analyzing Root Cause...")
+        logger.info("Analyzing Root Cause...")
         try:
             prompt = self.prompts.analyze_failure(state.current_code, error_log, state.problem_desc)
             root_cause = str(
                 self.llm.complete(prompt, system_prompt="You are a world-class debugging agent.")
             )
             state.execution_logs.append(f"✅ Root cause analysis: {root_cause[:80]}...")
+            logger.debug(f"Root cause identified: {root_cause[:100]}...")
             return root_cause
         except Exception as e:
             state.execution_logs.append(f"❌ Root cause analysis failed: {str(e)}")
+            logger.error(f"Root cause analysis failed: {e}", exc_info=True)
             raise
 
     def step_apply_fix(self, state: FlowState, root_cause: str, error_log: str) -> FlowState:
         """Writes the patch based on the analysis."""
-        print("🔧 [Repair] Applying fix...")
+        logger.info("Applying fix...")
         try:
             prompt = self.prompts.targeted_repair(state.current_code, root_cause)
             raw_code = self.llm.complete(
@@ -186,6 +201,7 @@ class AlphaRepairAgent:
                     f"Warning: Repair iteration {state.iterations} generated empty code"
                 )
                 state.status = "FAILED"
+                logger.warning(f"Repair iteration {state.iterations} generated empty code")
                 return state
 
             state.current_code = cleaned_code
@@ -193,8 +209,10 @@ class AlphaRepairAgent:
                 {"iter": state.iterations, "cause": root_cause, "error": error_log}
             )
             state.execution_logs.append(f"✅ Repair applied (iteration {state.iterations})")
+            logger.debug(f"Repair applied successfully at iteration {state.iterations}")
         except Exception as e:
             state.execution_logs.append(f"❌ Repair failed: {str(e)}")
+            logger.error(f"Repair failed: {e}", exc_info=True)
             raise
         return state
 

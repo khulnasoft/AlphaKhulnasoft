@@ -24,25 +24,25 @@ def test_flow_state_with_tests():
 
 
 def test_clean_markdown_no_markdown():
-    agent = AlphaRepairAgent()
+    agent = AlphaRepairAgent(config=AlphaConfig(validate_api_keys=False))
     code = "def solve():\n    return 42"
     assert agent._clean_markdown(code) == code
 
 
 def test_clean_markdown_python_block():
-    agent = AlphaRepairAgent()
+    agent = AlphaRepairAgent(config=AlphaConfig(validate_api_keys=False))
     text = "```python\ndef solve():\n    return 42\n```"
     assert agent._clean_markdown(text) == "def solve():\n    return 42"
 
 
 def test_clean_markdown_generic_block():
-    agent = AlphaRepairAgent()
+    agent = AlphaRepairAgent(config=AlphaConfig(validate_api_keys=False))
     text = "```\ndef solve():\n    return 42\n```"
     assert agent._clean_markdown(text) == "def solve():\n    return 42"
 
 
 def test_finalize_result_solved():
-    agent = AlphaRepairAgent()
+    agent = AlphaRepairAgent(config=AlphaConfig(validate_api_keys=False))
     state = FlowState(problem_desc="test")
     state.status = "SOLVED"
     state.current_code = "print(42)"
@@ -59,7 +59,7 @@ def test_finalize_result_solved():
 
 
 def test_finalize_result_failed():
-    agent = AlphaRepairAgent()
+    agent = AlphaRepairAgent(config=AlphaConfig(validate_api_keys=False))
     state = FlowState(problem_desc="test")
     state.status = "FAILED"
     state.current_code = ""
@@ -77,23 +77,32 @@ def test_alpha_config_defaults():
     assert config.max_retries == 5
     assert config.sandbox_timeout == 2
     assert config.llm_max_retries == 3
+    assert config.max_memory_mb == 512
+    assert config.validate_api_keys
 
 
 def test_agent_accepts_config():
-    config = AlphaConfig(model_name="gpt-4o-mini", max_retries=3, sandbox_timeout=5)
+    config = AlphaConfig(
+        model_name="gpt-4o-mini",
+        max_retries=3,
+        sandbox_timeout=5,
+        max_memory_mb=256,
+        validate_api_keys=False,
+    )
     agent = AlphaRepairAgent(config=config)
     assert agent.model == "gpt-4o-mini"
     assert agent.max_retries == 3
     assert agent.sandbox.timeout == 5
+    assert agent.sandbox.max_memory_mb == 256
 
 
 def test_agent_default_uses_prompt_registry():
-    agent = AlphaRepairAgent()
+    agent = AlphaRepairAgent(config=AlphaConfig(validate_api_keys=False))
     assert agent.prompts == PromptRegistry
 
 
 def test_step_execute_tests_logs_warning_on_empty(monkeypatch):
-    agent = AlphaRepairAgent()
+    agent = AlphaRepairAgent(config=AlphaConfig(validate_api_keys=False))
     state = FlowState(problem_desc="test")
 
     def fake_run_tests(code, test_cases):
@@ -107,7 +116,7 @@ def test_step_execute_tests_logs_warning_on_empty(monkeypatch):
 
 
 def test_step_execute_tests_forwards_to_sandbox(monkeypatch):
-    agent = AlphaRepairAgent()
+    agent = AlphaRepairAgent(config=AlphaConfig(validate_api_keys=False))
     state = FlowState(problem_desc="test", tests=[{"input": "2", "expected": "4"}])
 
     called = {"value": False}
@@ -124,7 +133,7 @@ def test_step_execute_tests_forwards_to_sandbox(monkeypatch):
 
 
 def test_run_flow_handles_step_exception(monkeypatch):
-    agent = AlphaRepairAgent()
+    agent = AlphaRepairAgent(config=AlphaConfig(validate_api_keys=False))
 
     def failing_step(state):
         raise RuntimeError("boom")
@@ -135,7 +144,7 @@ def test_run_flow_handles_step_exception(monkeypatch):
 
 
 def test_run_flow_fails_when_max_retries_exhausted(monkeypatch):
-    config = AlphaConfig(max_retries=3)
+    config = AlphaConfig(max_retries=3, validate_api_keys=False)
     agent = AlphaRepairAgent(config=config)
 
     def fake_semantic_analysis(state):
