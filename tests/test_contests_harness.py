@@ -70,6 +70,46 @@ def test_grade_dataclass_metrics():
     assert g.passed == 1 and g.failed == 1 and g.errored == 1 and g.timeouts == 1
 
 
+def test_run_once_classifies_signals(monkeypatch):
+    """A child killed by a resource-limit signal must be MLE/TLE, not RE."""
+    import signal
+
+    from alphakhulnasoft.contests import harness
+
+    class _FakeProc:
+        def __init__(self, returncode, stderr="", stdout=""):
+            self.returncode = returncode
+            self.stderr = stderr
+            self.stdout = stdout
+
+    def _fake_run(returncode, stderr="", stdout=""):
+        def _run(*a, **k):
+            return _FakeProc(returncode, stderr, stdout)
+
+        return _run
+
+    spec = type("S", (), {"run_cmd": ["{executable}"], "compile_cmd": None, "ext": ".py"})()
+    monkeypatch.setattr(harness.subprocess, "run", _fake_run(0))
+
+    # Address-space / abort signals -> MLE (the C++/Java memory-limit case).
+    monkeypatch.setattr(harness.subprocess, "run", _fake_run(-signal.SIGSEGV))
+    assert harness._run_once(spec, "x", "/tmp", "1", 2, 256)[0] == "MLE"
+    monkeypatch.setattr(harness.subprocess, "run", _fake_run(-signal.SIGABRT))
+    assert harness._run_once(spec, "x", "/tmp", "1", 2, 256)[0] == "MLE"
+
+    # CPU-limit signal -> TLE.
+    monkeypatch.setattr(harness.subprocess, "run", _fake_run(-getattr(signal, "SIGXCPU", 24)))
+    assert harness._run_once(spec, "x", "/tmp", "1", 2, 256)[0] == "TLE"
+
+    # Ordinary nonzero exit without a memory signal -> RE.
+    monkeypatch.setattr(harness.subprocess, "run", _fake_run(1, stderr="segmentation? no"))
+    assert harness._run_once(spec, "x", "/tmp", "1", 2, 256)[0] == "RE"
+
+    # Python MemoryError text still maps to MLE.
+    monkeypatch.setattr(harness.subprocess, "run", _fake_run(1, stderr="MemoryError: ..."))
+    assert harness._run_once(spec, "x", "/tmp", "1", 2, 256)[0] == "MLE"
+
+
 @pytest.mark.skipif(__import__("shutil").which("g++") is None, reason="g++ not installed")
 def test_cpp_round_trip():
     cpp = "#include <iostream>\nusing namespace std;\nint main(){int a,b;cin>>a>>b;cout<<a+b;return 0;}"

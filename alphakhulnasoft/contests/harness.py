@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import os
 import resource
+import signal
 import subprocess
 import sys
 import tempfile
@@ -17,6 +18,21 @@ from dataclasses import dataclass, field
 
 from .languages import get_language_spec
 from .problem import ContestProblem, TestCase
+
+# Signals a child is likely to die with when our sandbox caps are exceeded. Under
+# RLIMIT_AS a failed allocation is usually dereferenced (SIGSEGV/SIGBUS) or aborts
+# (SIGABRT/SIGKILL); under RLIMIT_CPU the kernel sends SIGXCPU. These are kept
+# separate from ordinary runtime errors (which also surface as signals).
+_MEMORY_LIMIT_SIGNALS = tuple(
+    s
+    for s in (
+        getattr(signal, "SIGSEGV", None),
+        getattr(signal, "SIGBUS", None),
+        getattr(signal, "SIGABRT", None),
+        getattr(signal, "SIGKILL", None),
+    )
+    if s is not None
+)
 
 
 def compare_outputs(expected: str, actual: str, ignore_whitespace: bool = True) -> bool:
@@ -180,6 +196,18 @@ def _run_once(
         return "RE", None
 
     if proc.returncode != 0:
+        # A negative return code means the child was terminated by a signal.
+        # Under our sandbox the memory cap (RLIMIT_AS) manifests as SIGSEGV/SIGBUS
+        # (a failed allocation dereferenced) or SIGABRT/SIGKILL, and the CPU cap
+        # (RLIMIT_CPU) as SIGXCPU. Classify these as MLE / TLE rather than RE.
+        if proc.returncode < 0:
+            sig = -proc.returncode
+            sigxcpu = getattr(signal, "SIGXCPU", None)
+            if sigxcpu is not None and sig == sigxcpu:
+                return "TLE", None
+            if sig in _MEMORY_LIMIT_SIGNALS:
+                return "MLE", None
+            return "RE", None
         if "MemoryError" in (proc.stderr or ""):
             return "MLE", None
         return "RE", None
