@@ -124,6 +124,8 @@ def reference_ceiling(
     Requires no LLM.
     """
     rows: list[dict[str, Any]] = []
+    if max_refs < 0:
+        raise ValueError(f"max_refs must be >= 0, got {max_refs}")
     for p in problems:
         refs = get_references(p, language)[:max_refs]
         passed = bool(refs) and any(

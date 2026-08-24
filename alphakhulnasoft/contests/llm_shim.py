@@ -15,10 +15,10 @@ def make_llm(model: str | None = None, rpm: int | None = None) -> Any:
     from ..config import AlphaConfig
     from ..llm import LLMProvider
 
-    config = AlphaConfig()
+    config = AlphaConfig.from_env()
     return LLMProvider(
         model=model or config.model_name,
         max_retries=config.llm_max_retries,
         validate_keys=True,
-        rate_limit_rpm=rpm or config.rate_limit_rpm,
+        rate_limit_rpm=rpm if rpm is not None else config.rate_limit_rpm,
     )

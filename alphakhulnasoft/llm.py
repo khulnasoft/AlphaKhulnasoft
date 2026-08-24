@@ -49,10 +49,6 @@ class LLMProvider:
         """Sends a completion request to the LLM with retry logic."""
         import litellm
 
-        # Respect a cheap rate limit so batched benchmarks don't trip provider RPM.
-        if self.rate_limit_rpm:
-            time.sleep(60.0 / self.rate_limit_rpm)
-
         # Disable telemetry and version checks to prevent hangs
         litellm.telemetry = False
         litellm.version_check = False
@@ -62,6 +58,10 @@ class LLMProvider:
         messages.append({"role": "user", "content": prompt})
 
         for attempt in range(self.max_retries):
+            # Respect the rate limit before EVERY attempt, including retries after a
+            # RateLimitError, so back-to-back attempts stay under the provider RPM.
+            if self.rate_limit_rpm:
+                time.sleep(60.0 / self.rate_limit_rpm)
             try:
                 response = litellm.completion(model=self.model, messages=messages)
                 if not response.choices or not response.choices[0].message:

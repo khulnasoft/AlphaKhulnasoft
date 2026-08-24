@@ -82,12 +82,14 @@ def _build_parser() -> argparse.ArgumentParser:
 def _load_problems(args: argparse.Namespace):
     from .loader import load_huggingface, load_local
 
+    if args.limit is not None and args.limit < 0:
+        raise SystemExit("--limit must be >= 0")
     if args.hf_dataset:
         return load_huggingface(name=args.hf_dataset, split=args.split, limit=args.limit)
     if not args.dataset:
         raise SystemExit("Provide --dataset (local JSONL) or --hf-dataset (Hugging Face).")
     problems = load_local(args.dataset)
-    if args.limit:
+    if args.limit is not None:
         problems = problems[: args.limit]
     return problems
 
