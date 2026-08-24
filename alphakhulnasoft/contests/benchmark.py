@@ -86,6 +86,28 @@ class BenchmarkReport:
             "problems": [r.as_dict() for r in self.problem_results],
         }
 
+    def to_file(self, path: str) -> None:
+        """Write the report as JSON to ``path``."""
+        import json
+
+        with open(path, "w", encoding="utf-8") as fh:
+            json.dump(self.as_dict(), fh, indent=2)
+
+    def publish(self, repo_id: str, token: str | None = None) -> None:
+        """Upload the report to a Hugging Face dataset repo (plan §7.3)."""
+        import os
+        import tempfile
+
+        from alphakhulnasoft.publisher import HFPublisher
+
+        fd, tmp = tempfile.mkstemp(suffix=".json", prefix="contest_bench_")
+        os.close(fd)
+        try:
+            self.to_file(tmp)
+            HFPublisher(repo_id, token=token).publish_results(tmp)
+        finally:
+            os.remove(tmp)
+
 
 def run_benchmark(
     problems: list[ContestProblem],
@@ -95,6 +117,8 @@ def run_benchmark(
     k: int = 1,
     llm: Any | None = None,
     novel_threshold: float = NOVEL_THRESHOLD,
+    publish_repo: str | None = None,
+    hf_token: str | None = None,
 ) -> BenchmarkReport:
     """Run the sample→filter→rank→grade pipeline over ``problems``."""
     report = BenchmarkReport(language=language, n_samples=n_samples, k=k)
@@ -116,6 +140,8 @@ def run_benchmark(
             )
             report.error = str(exc)
         report.problem_results.append(result)
+    if publish_repo:
+        report.publish(publish_repo, token=hf_token)
     return report
 
 

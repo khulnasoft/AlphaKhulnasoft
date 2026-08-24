@@ -40,6 +40,8 @@ def _build_parser() -> argparse.ArgumentParser:
     p_bench.add_argument("--limit", type=int, default=None)
     p_bench.add_argument("--format", choices=["json", "csv"], default="json")
     p_bench.add_argument("--output", default=None)
+    p_bench.add_argument("--publish", default=None, help="HF dataset repo id to upload the report")
+    p_bench.add_argument("--hf-token", default=None, help="HF token (else HF_TOKEN env)")
     return parser
 
 
@@ -76,7 +78,13 @@ def main(argv: Sequence[str] | None = None) -> int:
 
         agent = ContestAgent(llm=make_llm())
         report = run_benchmark(
-            problems, agent, language=args.language, n_samples=args.n_samples, k=args.k
+            problems,
+            agent,
+            language=args.language,
+            n_samples=args.n_samples,
+            k=args.k,
+            publish_repo=args.publish,
+            hf_token=args.hf_token,
         )
         payload = report.as_dict()
         text = json.dumps(payload, indent=2)

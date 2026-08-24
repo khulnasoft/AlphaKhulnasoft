@@ -214,16 +214,21 @@ The design separates **solving** from **copying**:
 
 ```bash
 # Load 3 in-repo demo problems (a+b across codeforces/atcoder/codechef)
-uv run python -m alphakhulnasoft.contests.cli load \
+uv run python -m alphakhulnasoft.contests load \
   --source alphakhulnasoft/contests/data/tiny.jsonl
 
 # Solve one problem end-to-end (needs an LLM key; see llm_shim)
-uv run python -m alphakhulnasoft.contests.cli solve \
+uv run python -m alphakhulnasoft.contests solve \
   --source alphakhulnasoft/contests/data/tiny.jsonl --problem-id demo_aplusb_1 --language py
 
 # Benchmark pass@k / novel_pass@k (LLM calls are mocked in CI)
-uv run python -m alphakhulnasoft.contests.cli bench \
+uv run python -m alphakhulnasoft.contests bench \
   --source alphakhulnasoft/contests/data/tiny.jsonl --n-samples 6 --k 2
+
+# Publish the report to a Hugging Face dataset repo (plan §7.3)
+uv run python -m alphakhulnasoft.contests bench \
+  --source alphakhulnasoft/contests/data/tiny.jsonl --n-samples 6 --k 2 \
+  --publish khulnasoft/alphakhulnasoft-contest-results
 ```
 
 ### Modules
