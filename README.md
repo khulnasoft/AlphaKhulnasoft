@@ -226,8 +226,11 @@ uv run python -m alphakhulnasoft.contests bench \
   --dataset alphakhulnasoft/contests/data/tiny.jsonl --n-samples 6 --k 2
 
 # Benchmark on the REAL Code Contests dataset (streaming; needs an API key)
+# NOTE: google-research-datasets/code_contests is gated on HF -> set HF_TOKEN.
+# Throttle with --rpm to stay under provider quota (e.g. Gemini free tier = 20/day).
 uv run python -m alphakhulnasoft.contests bench \
-  --hf-dataset code_contests --split train --limit 200 --n-samples 10 --k 5
+  --hf-dataset google-research-datasets/code_contests --split valid --limit 200 \
+  --n-samples 10 --k 5 --model gemini/gemini-3.5-flash --rpm 30
 
 # Publish the report to a Hugging Face dataset repo (plan §7.3)
 uv run python -m alphakhulnasoft.contests bench \
