@@ -118,6 +118,74 @@ uv run python -m alphakhulnasoft.proof_visualizer results_proofs_latest.json
 - **alphakhulnasoft/proof_visualizer.py**: `ProofPlotter` — proof trajectory & depth charts.
 - **data/theorems_easy.jsonl**: sample theorem dataset.
 
+## 🧮 Tensor Matrix Multiplication
+
+AlphaKhulnasoft also ships an **exact, isolated tensor package** for studying
+matrix-multiplication algorithms as bilinear (rank-one) factorizations. It is
+independent of API keys, LLM providers, and the proof sandbox.
+
+A factorization describes the bilinear map `C = A @ B` (`A ∈ F^{m×k}`,
+`B ∈ F^{k×n}`, `C ∈ F^{m×n}`) as a sum of rank-one terms
+`(u, v, w)`; the product is reconstructed exactly with
+`Fraction` arithmetic for integer/rational fields. Included algorithms:
+schoolbook (rank `m·k·n`) and Strassen (rank 7 for 2×2, rank 49 for 4×4 via
+recursive recombination).
+
+### CPU setup
+```bash
+uv sync                # numpy is a default dependency
+uv run python -c "import alphakhulnasoft.matmul as mm; print(mm.registry.names())"
+```
+
+### Optional GPU setup (V100 / CUDA)
+```bash
+uv sync --group gpu     # installs torch; CPU-only CI never needs this
+```
+The benchmark runner refuses to report CPU timings as GPU results: requesting
+`--device cuda` with no CUDA device fails loudly, and `--verify-device v100`
+fails unless the device name reports a V100.
+
+### CLI: load, verify, and benchmark
+```bash
+# Reconstruct a 2x2 product exactly from the schoolbook factorization
+uv run python -c "import alphakhulnasoft.matmul as mm; \
+  print(mm.reconstruct(mm.registry.get('strassen_2x2'), [[1,2],[3,4]], [[5,6],[7,8]]))"
+
+# Check two 4x4 algorithms for nonequivalence (rank invariant)
+uv run python - <<'PY'
+import alphakhulnasoft.matmul as mm
+r = mm.check_equivalence(mm.schoolbook_4x4(), mm.strassen_4x4())
+print(r.result, '-', r.evidence)
+PY
+
+# Benchmark on CPU
+uv run python -m alphakhulnasoft.matmul.benchmarking.runner \
+  --algorithm strassen_2x2 --dims 2 2 2 --device cpu --reps 20
+
+# Benchmark on a V100 (fails clearly if unavailable)
+uv run python -m alphakhulnasoft.matmul.benchmarking.runner \
+  --algorithm strassen_2x2 --dims 2 2 2 --device cuda --verify-device v100
+```
+
+### Limitations of the equivalence verifier
+`check_equivalence` only decides under a **bounded** transformation group
+(factor permutation and per-factor `u → λu, v → v/λ` scaling). It never uses
+numerical tolerance to prove equivalence or nonequivalence:
+- A **rank / support / dimension** mismatch proves *nonequivalence*.
+- A successful bounded search proves *equivalence*.
+- Otherwise the answer is **inconclusive** — a failed search is not proof of
+  nonequivalence. Large-rank pairs (e.g. 4×4 Strassen, rank 49) are reported
+  as inconclusive rather than searched exhaustively.
+
+### Matmul modules
+- **alphakhulnasoft/matmul/tensor.py**: `MatmulSpec`, `RankOneFactor`, `Factorization`.
+- **alphakhulnasoft/matmul/reference.py**: exact reconstruction + schoolbook reference.
+- **alphakhulnasoft/matmul/algorithms/**: JSON `formats`, `loader`, `registry`, builtin generators.
+- **alphakhulnasoft/matmul/recombination/**: `compose_kronecker`, `compose_strassen`, `decomposition`.
+- **alphakhulnasoft/matmul/nonequivalence/**: `invariants`, `verifier`, `four_by_four` fixtures.
+- **alphakhulnasoft/matmul/benchmarking/**: `runner` (CPU + CUDA), `metrics`.
+- **alphakhulnasoft/matmul/data/**: checked-in factorization fixtures (see schema above).
+
 ## 🛡️ Code Quality & CI/CD
 We use modern tooling to ensure high code quality:
 - **Linting & Formatting:** `ruff`

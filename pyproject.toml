@@ -15,6 +15,7 @@ dependencies = [
     "datasets",
     "huggingface_hub",
     "google-cloud-aiplatform",
+    "numpy",
 ]
 
 [dependency-groups]
@@ -24,6 +25,12 @@ dev = [
     "mypy",
     "pytest-mock",
     "pandas-stubs",
+]
+
+# Optional CUDA dependency group. The default install and CI stay CPU-only;
+# install this only on machines with a compatible NVIDIA GPU + CUDA toolkit.
+gpu = [
+    "torch",
 ]
 
 [tool.ruff]
