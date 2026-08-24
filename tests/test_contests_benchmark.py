@@ -63,3 +63,26 @@ def test_benchmark_reports_novelty_labels():
     report = run_benchmark(problems, ContestAgent(llm=_SolvingLLM()), "py", n_samples=6, k=1)
     for pr in report.problem_results:
         assert pr.top_novelty_label in ("novel", "borderline", "retrieved")
+
+
+def test_reference_ceiling_is_computed_without_llm():
+    from alphakhulnasoft.contests.benchmark import reference_ceiling
+
+    problems = load_local(FIXTURE)
+    ceil = reference_ceiling(problems, "py")
+    assert ceil["n_problems"] == len(problems)
+    assert ceil["reference_pass_at_k"] == 1.0  # fixture references are correct
+
+
+def test_run_benchmark_can_include_reference_ceiling():
+    problems = load_local(FIXTURE)
+    report = run_benchmark(
+        problems,
+        ContestAgent(llm=_SolvingLLM()),
+        "py",
+        n_samples=6,
+        k=1,
+        include_reference_ceiling=True,
+    )
+    assert report.reference_pass_at_k == 1.0
+    assert report.as_dict()["reference_pass_at_k"] == 1.0

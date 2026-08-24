@@ -28,6 +28,15 @@ def _build_parser() -> argparse.ArgumentParser:
     p_load.add_argument("--split", default="train")
     p_load.add_argument("--limit", type=int, default=None)
 
+    p_ceiling = sub.add_parser(
+        "ceiling", help="Compute the 'copying' ceiling from reference solutions (no LLM)."
+    )
+    p_ceiling.add_argument("--dataset", default=None, help="Local JSONL path.")
+    p_ceiling.add_argument("--hf-dataset", default=None, help="Hugging Face dataset id.")
+    p_ceiling.add_argument("--split", default="train")
+    p_ceiling.add_argument("--language", default="py")
+    p_ceiling.add_argument("--limit", type=int, default=None)
+
     p_solve = sub.add_parser("solve", help="Solve a single problem by id.")
     p_solve.add_argument("--dataset", default=None, help="Local JSONL path.")
     p_solve.add_argument("--hf-dataset", default=None, help="Hugging Face dataset id.")
@@ -58,6 +67,11 @@ def _build_parser() -> argparse.ArgumentParser:
     p_bench.add_argument("--output", default=None)
     p_bench.add_argument("--publish", default=None, help="HF dataset repo id to upload the report")
     p_bench.add_argument("--hf-token", default=None, help="HF token (else HF_TOKEN env)")
+    p_bench.add_argument(
+        "--reference-ceiling",
+        action="store_true",
+        help="Also compute the 'copying' ceiling from reference solutions",
+    )
     return parser
 
 
@@ -85,6 +99,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(json.dumps([p.problem_id for p in problems], indent=2))
         return 0
 
+    if args.command == "ceiling":
+        from .benchmark import reference_ceiling
+
+        problems = _load_problems(args)
+        print(json.dumps(reference_ceiling(problems, args.language), indent=2))
+        return 0
+
     if args.command in ("solve", "bench"):
         problems = _load_problems(args)
         if args.command == "solve":
@@ -109,6 +130,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             k=args.k,
             publish_repo=args.publish,
             hf_token=args.hf_token,
+            include_reference_ceiling=args.reference_ceiling,
         )
         payload = report.as_dict()
         text = json.dumps(payload, indent=2)

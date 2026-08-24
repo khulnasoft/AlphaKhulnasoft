@@ -13,6 +13,7 @@ from typing import Any
 
 from .generator import ContestAgent
 from .harness import grade_solution
+from .loader import get_references
 from .planner import classify_selection, select_top
 from .problem import ContestProblem
 from .verifier import NOVEL_THRESHOLD
@@ -53,6 +54,7 @@ class BenchmarkReport:
     k: int
     problem_results: list[ProblemResult] = field(default_factory=list)
     error: str | None = None
+    reference_pass_at_k: float | None = None
 
     @property
     def n_problems(self) -> int:
@@ -81,6 +83,7 @@ class BenchmarkReport:
             "n_problems": self.n_problems,
             "pass_at_k": self.pass_at_k(),
             "novel_pass_at_k": self.novel_pass_at_k(),
+            "reference_pass_at_k": self.reference_pass_at_k,
             "mean_novelty": self.mean_novelty(),
             "error": self.error,
             "problems": [r.as_dict() for r in self.problem_results],
@@ -109,6 +112,27 @@ class BenchmarkReport:
             os.remove(tmp)
 
 
+def reference_ceiling(problems: list[ContestProblem], language: str = "py") -> dict[str, Any]:
+    """The 'copying' ceiling (plan §7.2): pass@k if we just reused reference solutions.
+
+    For every problem, each same-language reference solution is graded on the full
+    (visible + hidden) test set. ``reference_pass_at_k`` is the fraction of problems
+    where at least one reference passes. The milestone's ``novel_pass@k`` must beat
+    this to demonstrate genuine problem solving rather than memorization.
+    Requires no LLM.
+    """
+    rows: list[dict[str, Any]] = []
+    for p in problems:
+        refs = get_references(p, language)
+        passed = bool(refs) and any(
+            grade_solution(p, r.code, language, visible_only=False).all_passed() for r in refs
+        )
+        rows.append({"problem_id": p.problem_id, "reference_pass": passed})
+    n = len(rows)
+    ceil = (sum(r["reference_pass"] for r in rows) / n) if n else 0.0
+    return {"language": language, "n_problems": n, "reference_pass_at_k": ceil, "problems": rows}
+
+
 def run_benchmark(
     problems: list[ContestProblem],
     agent: ContestAgent,
@@ -119,9 +143,12 @@ def run_benchmark(
     novel_threshold: float = NOVEL_THRESHOLD,
     publish_repo: str | None = None,
     hf_token: str | None = None,
+    include_reference_ceiling: bool = False,
 ) -> BenchmarkReport:
     """Run the sample→filter→rank→grade pipeline over ``problems``."""
     report = BenchmarkReport(language=language, n_samples=n_samples, k=k)
+    if include_reference_ceiling:
+        report.reference_pass_at_k = reference_ceiling(problems, language)["reference_pass_at_k"]
     for problem in problems:
         try:
             result = _bench_problem(problem, agent, language, n_samples, k, llm, novel_threshold)

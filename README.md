@@ -236,7 +236,14 @@ uv run python -m alphakhulnasoft.contests bench \
 uv run python -m alphakhulnasoft.contests bench \
   --dataset alphakhulnasoft/contests/data/tiny.jsonl --n-samples 6 --k 2 \
   --publish khulnasoft/alphakhulnasoft-contest-results
+
+# The "copying" ceiling (plan §7.2): pass@k if we just reused references. No LLM.
+uv run python -m alphakhulnasoft.contests ceiling \
+  --dataset alphakhulnasoft/contests/data/tiny.jsonl --language py
 ```
+
+The milestone is only meaningful when `novel_pass@k` **beats** the copying ceiling:
+reusing references scores `reference_pass_at_k`, so a model must solve *novelly* to add value.
 
 ### Modules
 
