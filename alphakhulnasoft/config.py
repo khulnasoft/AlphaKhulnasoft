@@ -9,11 +9,13 @@ class AlphaConfig:
     llm_max_retries: int = 3
     max_memory_mb: int = 512
     validate_api_keys: bool = True
+    rate_limit_rpm: int | None = None
 
     @classmethod
     def from_env(cls):
         import os
 
+        rpm = os.getenv("ALPHA_RPM")
         return cls(
             model_name=os.getenv("ALPHA_MODEL", "gpt-4o"),
             max_retries=int(os.getenv("ALPHA_MAX_RETRIES", 5)),
@@ -21,4 +23,5 @@ class AlphaConfig:
             llm_max_retries=int(os.getenv("ALPHA_LLM_RETRIES", 3)),
             max_memory_mb=int(os.getenv("ALPHA_MAX_MEMORY_MB", 512)),
             validate_api_keys=os.getenv("ALPHA_VALIDATE_API_KEYS", "true").lower() == "true",
+            rate_limit_rpm=int(rpm) if rpm else None,
         )

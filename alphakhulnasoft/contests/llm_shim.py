@@ -10,10 +10,15 @@ from __future__ import annotations
 from typing import Any
 
 
-def make_llm(model: str | None = None) -> Any:
+def make_llm(model: str | None = None, rpm: int | None = None) -> Any:
     """Return the production LLM provider (validates API keys)."""
     from ..config import AlphaConfig
     from ..llm import LLMProvider
 
     config = AlphaConfig()
-    return LLMProvider(model=model or config.model_name, validate_keys=True)
+    return LLMProvider(
+        model=model or config.model_name,
+        max_retries=config.llm_max_retries,
+        validate_keys=True,
+        rate_limit_rpm=rpm or config.rate_limit_rpm,
+    )

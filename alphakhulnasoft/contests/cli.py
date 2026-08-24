@@ -37,6 +37,7 @@ def _build_parser() -> argparse.ArgumentParser:
     p_solve.add_argument(
         "--model", default=None, help="LLM model id (e.g. gemini/gemini-1.5-flash)"
     )
+    p_solve.add_argument("--rpm", type=int, default=None, help="Max LLM requests/minute (throttle)")
     p_solve.add_argument("--n-samples", type=int, default=5)
     p_solve.add_argument("--device", default="cpu")
 
@@ -50,6 +51,7 @@ def _build_parser() -> argparse.ArgumentParser:
     p_bench.add_argument(
         "--model", default=None, help="LLM model id (e.g. gemini/gemini-1.5-flash)"
     )
+    p_bench.add_argument("--rpm", type=int, default=None, help="Max LLM requests/minute (throttle)")
     p_bench.add_argument("--device", default="cpu")
     p_bench.add_argument("--limit", type=int, default=None)
     p_bench.add_argument("--format", choices=["json", "csv"], default="json")
@@ -66,7 +68,10 @@ def _load_problems(args: argparse.Namespace):
         return load_huggingface(name=args.hf_dataset, split=args.split, limit=args.limit)
     if not args.dataset:
         raise SystemExit("Provide --dataset (local JSONL) or --hf-dataset (Hugging Face).")
-    return load_local(args.dataset)
+    problems = load_local(args.dataset)
+    if args.limit:
+        problems = problems[: args.limit]
+    return problems
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -87,7 +92,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             if problem is None:
                 print(f"Problem {args.problem_id!r} not found.", file=sys.stderr)
                 return 2
-            agent = ContestAgent(llm=make_llm(model=args.model))
+            agent = ContestAgent(llm=make_llm(model=args.model, rpm=args.rpm))
             cand = agent.solve(problem, args.language, n_samples=args.n_samples)
             print(cand.code)
             print(
@@ -95,7 +100,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
             return 0
 
-        agent = ContestAgent(llm=make_llm(model=args.model))
+        agent = ContestAgent(llm=make_llm(model=args.model, rpm=args.rpm))
         report = run_benchmark(
             problems,
             agent,
