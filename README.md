@@ -83,6 +83,41 @@ Images are automatically published to the GitHub Container Registry:
 docker pull ghcr.io/khulnasoft/alphakhulnasoft:main
 ```
 
+## 📐 Formal Math Proofs (Nexus + Prose)
+
+AlphaKhulnasoft can also generate **formal math proofs** in the [Nexus](https://github.com/nexus) proof language *together with* a rigorous natural-language explanation. The same Flow Engineering loop (Analyze → Generate → Verify → Root Cause → Repair) is reused, with a `ProofSandbox` replacing the code sandbox and a final prose-synthesis step.
+
+### 1. Prove a single theorem
+```bash
+uv run python -m alphakhulnasoft.proof_generator \
+  --theorem "For all n >= 0, the sum of first n naturals is n(n+1)/2"
+```
+> Note: pass the theorem via the `run_proof_flow(theorem, proof_hints=...)` API; the CLI demo uses a built-in example when no API key is present.
+
+### 2. Benchmark a dataset of theorems
+```bash
+uv run python -m alphakhulnasoft.proof_benchmark \
+  --dataset data/theorems_easy.jsonl \
+  --output results_proofs_latest.json
+```
+
+### 3. Visualize proof metrics
+```bash
+uv run python -m alphakhulnasoft.proof_visualizer results_proofs_latest.json
+```
+
+### Nexus type-checker integration
+`ProofSandbox.verify_nexus_proof` shells out to the `nexus` binary on `PATH` when available (`nexus check file.nx`). When Nexus is not installed it falls back to a structural heuristic so the pipeline stays runnable in CI.
+
+### Proof modules
+- **alphakhulnasoft/proof_prompts.py**: `ProofPromptRegistry` — proof-specific personas (analyst, generator, debugger, writer).
+- **alphakhulnasoft/proof_generator.py**: `ProofState` + `ProofRepairAgent` (extends `AlphaRepairAgent`).
+- **alphakhulnasoft/proof_sandbox.py**: `ProofSandbox` — Nexus type-checker + tactic analysis.
+- **alphakhulnasoft/proof_evaluator.py**: `ProofEvaluator` — validity, conciseness, depth, efficiency.
+- **alphakhulnasoft/proof_benchmark.py**: `run_proof_benchmark` — orchestrates the pipeline.
+- **alphakhulnasoft/proof_visualizer.py**: `ProofPlotter` — proof trajectory & depth charts.
+- **data/theorems_easy.jsonl**: sample theorem dataset.
+
 ## 🛡️ Code Quality & CI/CD
 We use modern tooling to ensure high code quality:
 - **Linting & Formatting:** `ruff`
@@ -110,6 +145,12 @@ CI is automatically handled by **GitHub Actions** on every push to `main`.
 - **alphakhulnasoft/sandbox.py**: Secure execution engine.
 - **alphakhulnasoft/evaluator.py**: Scoring and metrics logic.
 - **alphakhulnasoft/visualizer.py**: Research-grade plotting.
+- **alphakhulnasoft/proof_generator.py**: Formal proof repair agent (Nexus + prose).
+- **alphakhulnasoft/proof_prompts.py**: Proof-specific prompt personas.
+- **alphakhulnasoft/proof_sandbox.py**: Nexus proof validator.
+- **alphakhulnasoft/proof_evaluator.py**: Proof scoring and metrics.
+- **alphakhulnasoft/proof_benchmark.py**: Proof benchmark orchestrator.
+- **alphakhulnasoft/proof_visualizer.py**: Proof quality charts.
 - **alphakhulnasoft/data_loader.py**: Ingestion from local and Hugging Face.
 - **alphakhulnasoft/publisher.py**: Results sharing to HF Hub.
 
