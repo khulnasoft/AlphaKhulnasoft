@@ -11,11 +11,12 @@ def validate_api_keys() -> None:
     has_openai = bool(os.getenv("OPENAI_API_KEY"))
     has_anthropic = bool(os.getenv("ANTHROPIC_API_KEY"))
     has_vertex = bool(os.getenv("GOOGLE_APPLICATION_CREDENTIALS"))
+    has_gemini = bool(os.getenv("GOOGLE_API_KEY"))
 
-    if not any([has_openai, has_anthropic, has_vertex]):
+    if not any([has_openai, has_anthropic, has_vertex, has_gemini]):
         raise ValueError(
             "No LLM API keys found. Please set at least one of: "
-            "OPENAI_API_KEY, ANTHROPIC_API_KEY, or GOOGLE_APPLICATION_CREDENTIALS"
+            "OPENAI_API_KEY, ANTHROPIC_API_KEY, GOOGLE_APPLICATION_CREDENTIALS, or GOOGLE_API_KEY"
         )
 
 

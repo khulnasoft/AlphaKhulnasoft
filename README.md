@@ -252,6 +252,10 @@ uv run python -m alphakhulnasoft.contests bench \
 > skips those languages when the toolchain is absent. LLM calls must be mocked
 > in CI — no keys are used in tests.
 >
+> **Using Google Gemini:** `uv sync --group gemini`, then export `GOOGLE_API_KEY`
+> and pass `--model gemini/gemini-1.5-flash` (or set `ALPHA_MODEL`). Vertex AI is
+> also supported out of the box via `GOOGLE_APPLICATION_CREDENTIALS`.
+>
 > A key-free demo notebook lives at
 > [`notebooks/AlphaKhulnasoft_Contests.ipynb`](notebooks/AlphaKhulnasoft_Contests.ipynb).
 

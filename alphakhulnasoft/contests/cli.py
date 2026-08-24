@@ -34,6 +34,9 @@ def _build_parser() -> argparse.ArgumentParser:
     p_solve.add_argument("--split", default="train")
     p_solve.add_argument("--problem-id", required=True)
     p_solve.add_argument("--language", default="py")
+    p_solve.add_argument(
+        "--model", default=None, help="LLM model id (e.g. gemini/gemini-1.5-flash)"
+    )
     p_solve.add_argument("--n-samples", type=int, default=5)
     p_solve.add_argument("--device", default="cpu")
 
@@ -44,6 +47,9 @@ def _build_parser() -> argparse.ArgumentParser:
     p_bench.add_argument("--language", default="py")
     p_bench.add_argument("--n-samples", type=int, default=10)
     p_bench.add_argument("--k", type=int, default=1)
+    p_bench.add_argument(
+        "--model", default=None, help="LLM model id (e.g. gemini/gemini-1.5-flash)"
+    )
     p_bench.add_argument("--device", default="cpu")
     p_bench.add_argument("--limit", type=int, default=None)
     p_bench.add_argument("--format", choices=["json", "csv"], default="json")
@@ -81,7 +87,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             if problem is None:
                 print(f"Problem {args.problem_id!r} not found.", file=sys.stderr)
                 return 2
-            agent = ContestAgent(llm=make_llm())
+            agent = ContestAgent(llm=make_llm(model=args.model))
             cand = agent.solve(problem, args.language, n_samples=args.n_samples)
             print(cand.code)
             print(
@@ -89,7 +95,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
             return 0
 
-        agent = ContestAgent(llm=make_llm())
+        agent = ContestAgent(llm=make_llm(model=args.model))
         report = run_benchmark(
             problems,
             agent,

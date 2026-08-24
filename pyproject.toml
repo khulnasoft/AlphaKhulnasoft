@@ -33,6 +33,13 @@ gpu = [
     "torch",
 ]
 
+# Optional Gemini dependency group. Required only when targeting Google Gemini
+# models via `gemini/<model>` (direct API key, GOOGLE_API_KEY). Vertex AI is
+# already covered by the default google-cloud-aiplatform dependency.
+gemini = [
+    "google-generativeai",
+]
+
 [tool.ruff]
 line-length = 100
 target-version = "py310"
