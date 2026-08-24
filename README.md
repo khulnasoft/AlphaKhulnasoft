@@ -251,6 +251,9 @@ uv run python -m alphakhulnasoft.contests bench \
 > C/C++/Java grading requires the matching compiler on `PATH`; the test suite
 > skips those languages when the toolchain is absent. LLM calls must be mocked
 > in CI — no keys are used in tests.
+>
+> A key-free demo notebook lives at
+> [`notebooks/AlphaKhulnasoft_Contests.ipynb`](notebooks/AlphaKhulnasoft_Contests.ipynb).
 
 ## 🛡️ Code Quality & CI/CD
 We use modern tooling to ensure high code quality:
