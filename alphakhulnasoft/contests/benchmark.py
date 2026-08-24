@@ -195,10 +195,18 @@ def _bench_problem(
         hidden_correct.append(grade.all_passed())
 
     pass_k = 1.0 if any(hidden_correct) else 0.0
-    top_novel = selected[0].novelty if selected else 0.0
+    # A problem counts as a *novel* pass only when some candidate both passes the
+    # hidden tests AND is novel (not just when the top candidate is novel while a
+    # different, less-novel candidate is the one that actually passed).
     novel_pass_k = (
-        1.0 if (selected and any(hidden_correct) and (top_novel or 0.0) >= novel_threshold) else 0.0
+        1.0
+        if any(
+            correct and (cand.novelty or 0.0) >= novel_threshold
+            for cand, correct in zip(selected, hidden_correct, strict=False)
+        )
+        else 0.0
     )
+    top_novel = selected[0].novelty if selected else 0.0
     mean_nov = (sum(c.novelty or 0.0 for c in selected) / len(selected)) if selected else 0.0
 
     return ProblemResult(

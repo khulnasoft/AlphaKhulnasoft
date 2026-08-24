@@ -44,6 +44,7 @@ def _build_parser() -> argparse.ArgumentParser:
     p_solve.add_argument("--dataset", default=None, help="Local JSONL path.")
     p_solve.add_argument("--hf-dataset", default=None, help="Hugging Face dataset id.")
     p_solve.add_argument("--split", default="train")
+    p_solve.add_argument("--limit", type=int, default=None)
     p_solve.add_argument("--problem-id", required=True)
     p_solve.add_argument("--language", default="py")
     p_solve.add_argument(
@@ -66,7 +67,7 @@ def _build_parser() -> argparse.ArgumentParser:
     p_bench.add_argument("--rpm", type=int, default=None, help="Max LLM requests/minute (throttle)")
     p_bench.add_argument("--device", default="cpu")
     p_bench.add_argument("--limit", type=int, default=None)
-    p_bench.add_argument("--format", choices=["json", "csv"], default="json")
+    p_bench.add_argument("--format", choices=["json"], default="json")
     p_bench.add_argument("--output", default=None)
     p_bench.add_argument("--publish", default=None, help="HF dataset repo id to upload the report")
     p_bench.add_argument("--hf-token", default=None, help="HF token (else HF_TOKEN env)")

@@ -1,7 +1,9 @@
 """Tests for the contest benchmark harness (pass@k / novel_pass@k)."""
 
-from alphakhulnasoft.contests.benchmark import run_benchmark
-from alphakhulnasoft.contests.generator import ContestAgent
+from unittest import mock
+
+from alphakhulnasoft.contests.benchmark import _bench_problem, run_benchmark
+from alphakhulnasoft.contests.generator import ContestAgent, GeneratedCandidate
 from alphakhulnasoft.contests.loader import load_local
 
 FIXTURE = "alphakhulnasoft/contests/data/tiny.jsonl"
@@ -86,3 +88,50 @@ def test_run_benchmark_can_include_reference_ceiling():
     )
     assert report.reference_pass_at_k == 1.0
     assert report.as_dict()["reference_pass_at_k"] == 1.0
+
+
+class _StubAgent:
+    def __init__(self, pool):
+        self._pool = pool
+
+    def generate_pool(self, problem, language, n_samples=0):
+        return self._pool
+
+
+def _grade_mock(correct_codes):
+    def _grade(problem, code, language, visible_only=False, limits=None):
+        class _G:
+            def all_passed(self):
+                return code in correct_codes
+
+        return _G()
+
+    return _grade
+
+
+def test_novel_pass_requires_same_candidate_to_pass_and_be_novel():
+    # Regression for the bug: a novel top candidate that FAILS hidden tests while a
+    # sub-threshold candidate PASSES must NOT count as a novel pass.
+    p = load_local(FIXTURE)[0]
+    novel_fail = GeneratedCandidate(code="NOVEL_FAIL", novelty=0.9)  # novel but wrong
+    dull_pass = GeneratedCandidate(code="DULL_PASS", novelty=0.2)  # passes but not novel
+    pool = [novel_fail, dull_pass]
+    with mock.patch("alphakhulnasoft.contests.benchmark.select_top", return_value=pool), mock.patch(
+        "alphakhulnasoft.contests.benchmark.grade_solution", _grade_mock({"DULL_PASS"})
+    ):
+        res = _bench_problem(p, _StubAgent(pool), "py", n_samples=2, k=2, llm=None, novel_threshold=0.7)
+    assert res.pass_at_k == 1.0  # a candidate does pass hidden tests
+    assert res.novel_pass_at_k == 0.0  # but the passing one is not novel
+
+
+def test_novel_pass_when_a_novel_candidate_passes():
+    p = load_local(FIXTURE)[0]
+    novel_pass = GeneratedCandidate(code="NOVEL_PASS", novelty=0.9)
+    dull_fail = GeneratedCandidate(code="DULL_FAIL", novelty=0.2)
+    pool = [dull_fail, novel_pass]
+    with mock.patch("alphakhulnasoft.contests.benchmark.select_top", return_value=pool), mock.patch(
+        "alphakhulnasoft.contests.benchmark.grade_solution", _grade_mock({"NOVEL_PASS"})
+    ):
+        res = _bench_problem(p, _StubAgent(pool), "py", n_samples=2, k=2, llm=None, novel_threshold=0.7)
+    assert res.pass_at_k == 1.0
+    assert res.novel_pass_at_k == 1.0  # the passing candidate is also novel
