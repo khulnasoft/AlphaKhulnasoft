@@ -165,7 +165,54 @@ def load_huggingface(
 
 
 def _code_contests_row_to_dict(row: dict[str, Any]) -> dict[str, Any]:
-    """Map a raw Code Contests row to our loader schema."""
+    """Map a raw Code Contests row to our loader schema.
+
+    Supports both the modern ``deepmind/code_contests`` layout (``public_tests`` /
+    ``private_tests`` / ``generated_tests`` as parallel input/output lists and a
+    ``solutions`` dict of parallel lists) and the older list-of-dicts layout.
+    """
+    if "public_tests" in row or "private_tests" in row or "generated_tests" in row:
+        return _row_to_dict_modern(row)
+    return _row_to_dict_legacy(row)
+
+
+def _row_to_dict_modern(row: dict[str, Any]) -> dict[str, Any]:
+    tests: list[dict] = []
+
+    def _add(block: Any, hidden: bool, cap: int | None = None) -> None:
+        if not isinstance(block, dict):
+            return
+        ins, outs = block.get("input", []), block.get("output", [])
+        pairs = list(zip(ins, outs, strict=False))
+        if cap is not None:
+            pairs = pairs[:cap]
+        for i, o in pairs:
+            tests.append({"input": str(i), "output": str(o), "hidden": hidden})
+
+    _add(row.get("public_tests"), hidden=False)
+    _add(row.get("private_tests"), hidden=True)
+    # generated_tests can be huge; cap to keep grading tractable while still hidden.
+    _add(row.get("generated_tests"), hidden=True, cap=10)
+
+    refs: list[dict] = []
+    sols = row.get("solutions") or {}
+    for lang, code in zip(sols.get("language", []), sols.get("solution", []), strict=False):
+        if not code:
+            continue
+        refs.append(
+            {"language": "cpp" if str(lang) == "cpp" else "py", "code": str(code), "status": "ok"}
+        )
+    return {
+        "problem_id": str(row.get("name", row.get("problem_id", row.get("id", "unknown")))),
+        "source": "codeforces",
+        "statement": row.get("description", "") or "",
+        "tests": tests,
+        "reference_solutions": refs,
+        "language": "py",
+    }
+
+
+def _row_to_dict_legacy(row: dict[str, Any]) -> dict[str, Any]:
     tests: list[dict] = []
     for t in row.get("tests", []) or []:
         tests.append(

@@ -112,7 +112,9 @@ class BenchmarkReport:
             os.remove(tmp)
 
 
-def reference_ceiling(problems: list[ContestProblem], language: str = "py") -> dict[str, Any]:
+def reference_ceiling(
+    problems: list[ContestProblem], language: str = "py", max_refs: int = 5
+) -> dict[str, Any]:
     """The 'copying' ceiling (plan §7.2): pass@k if we just reused reference solutions.
 
     For every problem, each same-language reference solution is graded on the full
@@ -123,7 +125,7 @@ def reference_ceiling(problems: list[ContestProblem], language: str = "py") -> d
     """
     rows: list[dict[str, Any]] = []
     for p in problems:
-        refs = get_references(p, language)
+        refs = get_references(p, language)[:max_refs]
         passed = bool(refs) and any(
             grade_solution(p, r.code, language, visible_only=False).all_passed() for r in refs
         )
