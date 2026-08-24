@@ -11,11 +11,12 @@ def validate_api_keys() -> None:
     has_openai = bool(os.getenv("OPENAI_API_KEY"))
     has_anthropic = bool(os.getenv("ANTHROPIC_API_KEY"))
     has_vertex = bool(os.getenv("GOOGLE_APPLICATION_CREDENTIALS"))
+    has_gemini = bool(os.getenv("GOOGLE_API_KEY"))
 
-    if not any([has_openai, has_anthropic, has_vertex]):
+    if not any([has_openai, has_anthropic, has_vertex, has_gemini]):
         raise ValueError(
             "No LLM API keys found. Please set at least one of: "
-            "OPENAI_API_KEY, ANTHROPIC_API_KEY, or GOOGLE_APPLICATION_CREDENTIALS"
+            "OPENAI_API_KEY, ANTHROPIC_API_KEY, GOOGLE_APPLICATION_CREDENTIALS, or GOOGLE_API_KEY"
         )
 
 
@@ -28,14 +29,21 @@ class LLMProvider:
     """
 
     def __init__(
-        self, model: str = "gpt-4-turbo", max_retries: int = 3, validate_keys: bool = True
+        self,
+        model: str = "gpt-4-turbo",
+        max_retries: int = 3,
+        validate_keys: bool = True,
+        rate_limit_rpm: int | None = None,
     ):
         if max_retries <= 0:
             raise ValueError(f"max_retries must be positive, got {max_retries}")
+        if rate_limit_rpm is not None and rate_limit_rpm <= 0:
+            raise ValueError(f"rate_limit_rpm must be positive, got {rate_limit_rpm}")
         if validate_keys:
             validate_api_keys()
         self.model = model
         self.max_retries = max_retries
+        self.rate_limit_rpm = rate_limit_rpm
 
     def complete(self, prompt: str, system_prompt: str | None = None) -> str:
         """Sends a completion request to the LLM with retry logic."""
@@ -50,6 +58,10 @@ class LLMProvider:
         messages.append({"role": "user", "content": prompt})
 
         for attempt in range(self.max_retries):
+            # Respect the rate limit before EVERY attempt, including retries after a
+            # RateLimitError, so back-to-back attempts stay under the provider RPM.
+            if self.rate_limit_rpm:
+                time.sleep(60.0 / self.rate_limit_rpm)
             try:
                 response = litellm.completion(model=self.model, messages=messages)
                 if not response.choices or not response.choices[0].message:
