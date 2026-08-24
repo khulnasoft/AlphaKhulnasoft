@@ -21,18 +21,26 @@ def _build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True)
 
     p_load = sub.add_parser("load", help="List problems in a JSONL dataset.")
-    p_load.add_argument("--dataset", required=True)
+    p_load.add_argument("--dataset", default=None, help="Local JSONL path.")
+    p_load.add_argument(
+        "--hf-dataset", default=None, help="Hugging Face dataset id (e.g. code_contests)."
+    )
+    p_load.add_argument("--split", default="train")
     p_load.add_argument("--limit", type=int, default=None)
 
     p_solve = sub.add_parser("solve", help="Solve a single problem by id.")
-    p_solve.add_argument("--dataset", required=True)
+    p_solve.add_argument("--dataset", default=None, help="Local JSONL path.")
+    p_solve.add_argument("--hf-dataset", default=None, help="Hugging Face dataset id.")
+    p_solve.add_argument("--split", default="train")
     p_solve.add_argument("--problem-id", required=True)
     p_solve.add_argument("--language", default="py")
     p_solve.add_argument("--n-samples", type=int, default=5)
     p_solve.add_argument("--device", default="cpu")
 
     p_bench = sub.add_parser("bench", help="Benchmark pass@k / novel_pass@k.")
-    p_bench.add_argument("--dataset", required=True)
+    p_bench.add_argument("--dataset", default=None, help="Local JSONL path.")
+    p_bench.add_argument("--hf-dataset", default=None, help="Hugging Face dataset id.")
+    p_bench.add_argument("--split", default="train")
     p_bench.add_argument("--language", default="py")
     p_bench.add_argument("--n-samples", type=int, default=10)
     p_bench.add_argument("--k", type=int, default=1)
@@ -45,24 +53,29 @@ def _build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _load_problems(args: argparse.Namespace):
+    from .loader import load_huggingface, load_local
+
+    if args.hf_dataset:
+        return load_huggingface(name=args.hf_dataset, split=args.split, limit=args.limit)
+    if not args.dataset:
+        raise SystemExit("Provide --dataset (local JSONL) or --hf-dataset (Hugging Face).")
+    return load_local(args.dataset)
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
     from .benchmark import run_benchmark
     from .generator import ContestAgent
     from .llm_shim import make_llm
-    from .loader import load_local
 
     if args.command == "load":
-        problems = load_local(args.dataset)
-        if args.limit:
-            problems = problems[: args.limit]
+        problems = _load_problems(args)
         print(json.dumps([p.problem_id for p in problems], indent=2))
         return 0
 
     if args.command in ("solve", "bench"):
-        problems = load_local(args.dataset)
-        if args.limit:
-            problems = problems[: args.limit]
+        problems = _load_problems(args)
         if args.command == "solve":
             problem = next((p for p in problems if p.problem_id == args.problem_id), None)
             if problem is None:

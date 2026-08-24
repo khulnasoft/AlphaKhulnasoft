@@ -215,19 +215,23 @@ The design separates **solving** from **copying**:
 ```bash
 # Load 3 in-repo demo problems (a+b across codeforces/atcoder/codechef)
 uv run python -m alphakhulnasoft.contests load \
-  --source alphakhulnasoft/contests/data/tiny.jsonl
+  --dataset alphakhulnasoft/contests/data/tiny.jsonl
 
 # Solve one problem end-to-end (needs an LLM key; see llm_shim)
 uv run python -m alphakhulnasoft.contests solve \
-  --source alphakhulnasoft/contests/data/tiny.jsonl --problem-id demo_aplusb_1 --language py
+  --dataset alphakhulnasoft/contests/data/tiny.jsonl --problem-id demo_aplusb_1 --language py
 
 # Benchmark pass@k / novel_pass@k (LLM calls are mocked in CI)
 uv run python -m alphakhulnasoft.contests bench \
-  --source alphakhulnasoft/contests/data/tiny.jsonl --n-samples 6 --k 2
+  --dataset alphakhulnasoft/contests/data/tiny.jsonl --n-samples 6 --k 2
+
+# Benchmark on the REAL Code Contests dataset (streaming; needs an API key)
+uv run python -m alphakhulnasoft.contests bench \
+  --hf-dataset code_contests --split train --limit 200 --n-samples 10 --k 5
 
 # Publish the report to a Hugging Face dataset repo (plan §7.3)
 uv run python -m alphakhulnasoft.contests bench \
-  --source alphakhulnasoft/contests/data/tiny.jsonl --n-samples 6 --k 2 \
+  --dataset alphakhulnasoft/contests/data/tiny.jsonl --n-samples 6 --k 2 \
   --publish khulnasoft/alphakhulnasoft-contest-results
 ```
 
