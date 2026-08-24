@@ -186,6 +186,63 @@ numerical tolerance to prove equivalence or nonequivalence:
 - **alphakhulnasoft/matmul/benchmarking/**: `runner` (CPU + CUDA), `metrics`.
 - **alphakhulnasoft/matmul/data/**: checked-in factorization fixtures (see schema above).
 
+## 🏆 Competitive Programming: Solving Novel Problems
+
+Building on the Search & Repair loop, AlphaKhulnasoft now targets a research
+milestone: **solving *novel* competitive-programming problems** that were not
+seen during training — and, crucially, **solving them without copying a
+reference solution**. The dataset is the public *Code Contests* corpus
+(Aizu, AtCoder, CodeChef, Codeforces, HackerEarth).
+
+The design separates **solving** from **copying**:
+
+- The generator only ever sees the problem statement, I/O samples, and language.
+- Reference solutions are **quarantined** — only the verifier (`get_references`)
+  may read them, and only to measure output-overlap / memorization.
+- Novelty is a **discrete threshold** (not a float tolerance): a candidate whose
+  token-similarity to any reference is `>= 0.7` is `retrieved` (not novel);
+  `< 0.3` is `novel`; in between is `borderline`.
+
+### What is measured
+
+- **`pass@k`** — does at least one of `k` samples pass all (visible + hidden) tests?
+- **`novel_pass@k`** — does at least one *novel* sample pass? This is the real
+  milestone: a high `pass@k` with low `novel_pass@k` means the model is
+  reproducing memorized solutions, not reasoning.
+
+### Load, solve, benchmark
+
+```bash
+# Load 3 in-repo demo problems (a+b across codeforces/atcoder/codechef)
+uv run python -m alphakhulnasoft.contests.cli load \
+  --source alphakhulnasoft/contests/data/tiny.jsonl
+
+# Solve one problem end-to-end (needs an LLM key; see llm_shim)
+uv run python -m alphakhulnasoft.contests.cli solve \
+  --source alphakhulnasoft/contests/data/tiny.jsonl --problem-id demo_aplusb_1 --language py
+
+# Benchmark pass@k / novel_pass@k (LLM calls are mocked in CI)
+uv run python -m alphakhulnasoft.contests.cli bench \
+  --source alphakhulnasoft/contests/data/tiny.jsonl --n-samples 6 --k 2
+```
+
+### Modules
+
+- **alphakhulnasoft/contests/problem.py**: `ContestProblem`, `TestCase`, `ReferenceSolution`, `IOFormat`.
+- **alphakhulnasoft/contests/languages.py**: `LanguageSpec` + registry (py, cpp, java).
+- **alphakhulnasoft/contests/harness.py**: `grade_solution` — runs a candidate in a
+  sandbox and returns per-test `PASS/WA/RE/CE/TLE/MLE`.
+- **alphakhulnasoft/contests/loader.py**: `load_local` (JSONL), `load_huggingface`
+  (streaming Code Contests), and the quarantine gate `get_references`.
+- **alphakhulnasoft/contests/verifier.py**: token Jaccard novelty + memorization probe.
+- **alphakhulnasoft/contests/generator.py** + **planner.py**: the Analyze → Generate →
+  Verify → Repair loop and candidate selection.
+- **alphakhulnasoft/contests/benchmark.py**: `run_benchmark` producing a stable JSON report.
+
+> C/C++/Java grading requires the matching compiler on `PATH`; the test suite
+> skips those languages when the toolchain is absent. LLM calls must be mocked
+> in CI — no keys are used in tests.
+
 ## 🛡️ Code Quality & CI/CD
 We use modern tooling to ensure high code quality:
 - **Linting & Formatting:** `ruff`
